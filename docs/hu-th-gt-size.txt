@@ -95,36 +95,30 @@ As above, each of SB and BB has 169*9 = 1521 different paths to the flop before 
 
 3 more cards. Ignoring symmetries, there are select(50,3) = 50*49*48/(3*2) = 19,600 flops in the strategy for each of SB and BB. Need to work this out better.
 
-Consider suited and unsuited opening hands separately.
-
-13*12/2 = 78 suited hands (no pairs). Then high card of flop is either same suit or not, i.e. 1 of 2 suits. 2nd highest card of flop is 1 of 2 suits, or 1 of 3 suits. 3rd card is 1 of 2 suits, 1 of 3 suits or 1 of 4 suits. Quite a bit of symmetry but should work it out.
-
-13 (pocket pairs) + 13*12/2 = 91 off-suit hands. High flop card is 1 of 3 suits, nexts cards are 1 of 3-4 suits. Not a lot of symmetry.
-
-I'm going to take the number 17296 from https://poker.cs.ualberta.ca/publications/IJCAI03.pdf, but need to check it. I'm sure there are different blow-ups for suited vs unsuited.
+From companion doc, the total number of hole+flop equiv classes for each of SB and BB is 1,457,890 in 26 categories. For each of those, there are 9 paths to the flop.
 
 Betting is exactly the same structure as pre-flop, except BB goes first.
 
-Again, 5 activity nodes for each of SB and BB, making 169*9*17296*5 = 131,536,080 strategy nodes post-flop for each of SB and BB.
+Again, 5 activity nodes for each of SB and BB, making 1,457,890*9*5 = 65,605,050 strategy nodes post-flop for each of SB and BB.
 
 That's awkward, but still within DRAM constraints of modern machines.
 
-There are 9 paths to the Turn
+There are 9 paths to the Turn.
 
 -------------------------------------------------------------------------------------------------------------------
 
 Turn:
 ====
 
-As above, each of SB and BB has 169*9*17296*9 = 236,764,944 paths to the Turn.
+As above, each of SB and BB has 1,457,890*9*9 = 118,089,090 paths to the Turn.
 
 1 more card. Ignoring symmetries, there are 47 different turn cards. There are a bunch more symmetry classes here which makes formal reduction even harder. Need to compute this exactly.
 
 Betting is exactly the same as the Flop.
 
-5 activity nodes for each of SB and BB, making 169*9*17296*9*47*5 = 55,639,761,840 strategy nodes for each of SB and BB.
+5 activity nodes for each of SB and BB, making 1,457,890*9*9 *47*5 = 27,750,936,150 strategy nodes for each of SB and BB.
 
-That's getting into the realm of impossible to deal with.
+That's getting into the realm of very awkward.
 
 
 --------------------------------------------------------------------------------------------------------------------
@@ -132,13 +126,13 @@ That's getting into the realm of impossible to deal with.
 River:
 =====
 
-As above, each of SB and BB has 169*9*17296*9*47*9 = 100,151,571,312 paths to the River.
+As above, each of SB and BB has 1,457,890*9*9 *47*9 = 49,951,685,070 paths to the River.
 
 1 more card. Ignoring symmetries, there are 46 different river cards. Again symmetry calulation is tricky. TODO.
 
 Betting is exactly the same as the Flop and Turn.
 
-5 activity nodes for each of SB and BB making 169*9*17296*9*47*9*46*5 = 23,034,861,401,760 strategy nodes for each of SB and BB.
+5 activity nodes for each of SB and BB making 1,457,890*9*9 *47*9*46*5 = 11,488,887,566,100 strategy nodes for each of SB and BB.
 
 We could store this on large hard drives - it's order 100's of TB's, but it seems rather awkward to calculate :D.
 
