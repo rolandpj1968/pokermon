@@ -1,0 +1,110 @@
+Firstly, equivalence classes on the flop.
+
+Hole cards appear in 3 classes: pocket pairs, else suited or unsuited. Let's look at these separately.
+
+Suited:
+=======
+
+13*12/2 = 68 - one hi card, one lo card, call them spades.
+
+Next 3 cards can include 0, 1, 2 or 3 spades.
+
+0 spades - can be 1, 2 or 3 other suits.
+  1 other suit - select(13,3)                                = 13*12*11/(3*2) =   286 options
+  2 other suits - select(13,2) * select(13,1)                = 13*12/2 * 13   = 1,014 options
+  3 other suits - select(13,1)^3                             = 13*13*13       = 2,197 options
+
+1 spade - can be 1 or 2 other suits
+  1 other suit - select(11,1) * select(13,2)                 = 11 * (13*12/2) =   858 options
+  2 other suits - select(11,1) * select(13,1) * select(13,1) = 11*13*13       = 1,859 options
+
+2 spades - can be 1 other suit - select(11,2) * select(13,1) = 13 * 50        =   650 options
+
+3 spades - no other suits - select(11,3)                     = 11*10*9/(3*2)  =   165 options
+
+                                                                                -------------
+								Total:          7,029 options
+										-------------
+
+
+Off-suit:
+=========
+
+13*12/2 = 68 - one hi card, one lo card - call hi card spades and lo card hearts.
+
+Next 3 cards can have the following distribution of spades and hearts
+
+0 spades and hearts - can be 1 or 2 other suits
+  1 other suit - select(13,3)                                          = 13*12*11/(3*2)  =   286 options
+  2 other suits - select(13,2) * select(13,1)                          = 13*12/2 * 13    = 1,014 options
+
+0 spades, 1 heart - can be 1 or 2 other suits
+  1 other suit - select(12,1) * select(13,2)                           = 12 * 13*12/2    =   936 options
+  2 other suits - select(12,1) * select(13,1)^2                        = 12 * 13 * 13    = 2,028 options
+
+0 spades, 2 hearts - can be 1 other suit - select(12,2) * select(13,1) = 12*11/2 * 13    =   858 options
+
+0 spades, 3 hearts - no other suits - select(12,3)                     = 12*11*10/(3*2)  =   220 options
+
+1 spade, 0 hearts - can be 1 or 2 other suits
+  1 other suit - select(12,1) * select(13,2)                           = 12 * 13*12/2    =   936 options
+  2 other suits - select(12,1) * select(13,1)^2                        = 12 * 13 * 13    = 2,028 options
+
+1 spade, 1 heart - can be 1 other suit - select(12,1)^2 * select(13,1) = 12*12*13        = 1,872 options
+
+1 spade, 2 hearts - no other suits - select(12,2) * select(12,1)       = 12*11/2 * 12    =   792 options
+
+2 spades, 0 hearts - can be 1 other suit - select(12,2) * select(13,1) = 12*11/2 * 13    =   858 options
+
+2 spades, 1 heart - no other suits - select(12,2) * select(12,1)       = 12*11/2 * 12    =   792 options
+
+3 spades, 0 hearts - no other suits - select(12,3)                     = 12*11*10/(3*2)  =   220 options
+
+                                                                                          --------------
+								           Total:         12,840 options
+										          --------------
+
+Pocket Pairs:
+=============
+
+13 cases - no ordering, call them spades and hearts
+
+Next 3 cards can have the following distribution of spades and hearts
+
+0 spades and hearts - can be 1 or 2 other suits
+  1 other suit - select(13,3)                                                        = 13*12*11/(3*2)  =   286 options
+  2 other suits - select(13,2) * select(13,1)                                        = 13*12/2 * 13    = 1,014 options
+
+1 spade or heart - can be 1 or 2 other suits
+  1 other suit - select(12,1) * select(13,2)                                         = 12 * 13*12/2    =   936 options
+  2 other suits - select(12,1) * select(13,1)^2                                      = 12 * 13 * 13    = 2,028 options
+
+1 spade, 1 heart - can be 1 other suit - select(12,1)^2 * select(13,1)               = 12*12*13        = 1,872 options
+
+2 spades or 2 hearts - can be 1 other suit - select(12,2) * select(13,1)             = 12*11/2 * 13    =   858 options
+
+2 spades or hearts and 1 of the other - no other suits - select(12,2) * select(12,1) = 12*11/2 * 12    =   792 options
+
+3 spades or 3 hearts - no other suits - select(12,3)                                 = 12*11*10/(3*2)  =   220 options
+
+                                                                                                         -------------
+								                         Total:          8,006 options
+										                         -------------
+
+This is super nice and better than the estimates from https://poker.cs.ualberta.ca/publications/IJCAI03.pdf
+
+To summarize:
+
+Pre-flop (hole cards) - 169 equiv classes in 3 categories
+
+Suited Hole Cards   -  7,029 equiv classes in  7 categories for each of 68 hole card equiv classes =  7,069*68 = 480,692 equiv classes.
+Off-suit Hole Cards - 12,840 equiv classes in 11 categories for each of 68 hole card equiv classes = 12,840*68 = 873,120 equiv classes.
+Pocket Pairs        -  8,006 equiv classes in  8 categories for each of 13 hole card equiv classes =  8,006*13 = 104,078 equiv classes.
+
+Put together, hole cards + flop - 1,457,890 equiv classes in 26 categories (at an average of 8626 post-flop equiv classes per hole card equiv class).
+
+This is much better than the estimate of 17,296 from https://poker.cs.ualberta.ca/publications/IJCAI03.pdf, which means I am probably wrong :P
+
+
+
+
