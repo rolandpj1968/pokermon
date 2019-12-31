@@ -29,32 +29,17 @@ LD_FLAGS = -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -ma
 
 OBJ_DIR = obj
 
-SKAAK_CPP_FILES = $(wildcard src/chess/*.cpp)
-SKAAK_OBJ_FILES = $(addprefix obj/,$(notdir $(SKAAK_CPP_FILES:.cpp=.o)))
+POKERMON_CPP_FILES = $(wildcard src/pokermon.cpp)
+POKERMON_OBJ_FILES = $(addprefix obj/,$(notdir $(POKERMON_CPP_FILES:.cpp=.o)))
 
-SKAAK_BIN_NAME = skaak
+POKERMON_BIN_NAME = pokermon
 
-PERFT_CPP_FILES = $(wildcard src/perft/*.cpp)
-PERFT_HPP_FILES = $(wildcard src/perft/*.hpp)
-PERFT_OBJ_FILES = $(addprefix obj/,$(notdir $(PERFT_CPP_FILES:.cpp=.o)))
+all: $(OBJ_DIR) $(POKERMON_BIN_NAME)
 
-PERFT_BIN_NAME = perft
-
-all: $(OBJ_DIR) $(SKAAK_BIN_NAME) $(PERFT_BIN_NAME)
-
-$(SKAAK_BIN_NAME): $(SKAAK_OBJ_FILES) $(OBJ_FILES)
-	$(CXX) $(LD_FLAGS) -o $@ $^
-
-$(PERFT_BIN_NAME): $(PERFT_OBJ_FILES) $(OBJ_FILES)
+$(POKERMON_BIN_NAME): $(POKERMON_OBJ_FILES) $(OBJ_FILES)
 	$(CXX) $(LD_FLAGS) -o $@ $^
 
 obj/%.o: src/%.cpp $(HPP_FILES) Makefile
-	$(CXX) $(CC_FLAGS) -c -o $@ $<
-
-obj/%.o: src/chess/%.cpp $(HPP_FILES)
-	$(CXX) $(CC_FLAGS) -c -o $@ $<
-
-obj/%.o: src/perft/%.cpp $(HPP_FILES) $(PERFT_HPP_FILES)
 	$(CXX) $(CC_FLAGS) -c -o $@ $<
 
 $(OBJ_DIR):
@@ -62,7 +47,7 @@ $(OBJ_DIR):
 
 clean:
 	rm -rf $(OBJ_DIR)
-	rm -f $(SKAAK_BIN_NAME) $(PERFT_BIN_NAME)
+	rm -f $(POKERMON_BIN_NAME)
 
 
 

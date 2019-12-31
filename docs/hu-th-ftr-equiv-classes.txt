@@ -105,6 +105,50 @@ Put together, hole cards + flop - 1,457,890 equiv classes in 26 categories (at a
 
 This is much better than the estimate of 17,296 from https://poker.cs.ualberta.ca/publications/IJCAI03.pdf, which means I am probably wrong :P
 
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+The Turn:
+========
+
+Let's take the categories as before, 1 by 1.
 
 
+Suited Hole Cards:
 
+Flop Cards:
+
+0 spades - can be 1, 2 or 3 other suits.
+  1 other suit - select(13,3) - 286 options
+    Call the flop cards hearts.
+     Turn Card can be
+       Spades     - 11 options
+       Hearts     - 10 options
+       Other Suit - 13 options
+                    ----------
+	     Total: 34 options
+	            ----------
+
+  2 other suits - 1,014 options
+    Call the flop cards hearts (2 flop cards) and diamonds (1 flop card)
+      Turn card can be
+       Spades     - 11 options
+       Hearts     - 11 options
+       Diamonds   - 12 options
+       Clubs      - 13 options
+                    ----------
+	     Total: 47 options (no reduction :D)
+	            ----------
+
+  3 other suits - select(13,1)^3                             = 13*13*13       = 2,197 options
+
+1 spade - can be 1 or 2 other suits
+  1 other suit - select(11,1) * select(13,2)                 = 11 * (13*12/2) =   858 options
+  2 other suits - select(11,1) * select(13,1) * select(13,1) = 11*13*13       = 1,859 options
+
+2 spades - can be 1 other suit - select(11,2) * select(13,1) = 13 * 50        =   650 options
+
+3 spades - no other suits - select(11,3)                     = 11*10*9/(3*2)  =   165 options
+
+--
+
+OK, I think the lesson here is that whenever the Turn card has all suits available to it, which is almost all the time, then there is no combinatorial reduction according to suits, and I don't believe there is genuine combinatorial reduction available without losing information any other way.

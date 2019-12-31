@@ -1,0 +1,49 @@
+3-up betting for fixed limit poker. Protagonists are B, SB and BB. Sadly upper and lower case don't hack it for 3 actors. Mmm, need italics etc. For now B actions are in <>
+
+Node "" - pot BB + BB/2 - B acts
+
+<F> - SB, BB live, pot BB + BB/2, rest of this is identical to heads-up
+<C> - add BB, pot is BB*2 + BB/2, all 3 alive
+<B> - add 2*BB, pot is BB*3 + BB/2
+
+
+<F>
+ <F>f
+
+ <F>c
+  <F>cF
+  <F>cX
+  <F>cB
+   <F>cBf
+   <F>cBc
+   <F>cBr
+    <F>cBrF
+    <F>cBrC
+    <F>cBrR
+     <F>cBrRf
+     <F>cBrRc
+     <F>cBrRr
+      <F>cBrRf
+      <F>cBrRc
+      <F>cBrRr
+       <F>cBrRrF
+       <F>cBrRrC
+ 
+ <F>b
+  <F>bF
+  <F>bC
+  <F>bR
+   <F>bRf
+   <F>bRc
+   <F>bRr
+    <F>bRrF
+    <F>bRrC
+    <F>bRrR
+     <F>bRrRf
+     <F>bRrRc
+ 
+<C>
+
+<B>
+
+

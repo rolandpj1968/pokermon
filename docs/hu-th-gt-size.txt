@@ -93,13 +93,13 @@ Flop:
 
 As above, each of SB and BB has 169*9 = 1521 different paths to the flop before flop cards are dealt.
 
-3 more cards. Ignoring symmetries, there are select(50,3) = 50*49*48/(3*2) = 19,600 flops in the strategy for each of SB and BB. Need to work this out better.
+3 more cards. Ignoring symmetries, there are select(50,3) = 50*49*48/(3*2) = 19,600 flops in the strategy for each of SB and BB.
 
 From companion doc, the total number of hole+flop equiv classes for each of SB and BB is 1,457,890 in 26 categories. For each of those, there are 9 paths to the flop.
 
 Betting is exactly the same structure as pre-flop, except BB goes first.
 
-Again, 5 activity nodes for each of SB and BB, making 1,457,890*9*5 = 65,605,050 strategy nodes post-flop for each of SB and BB.
+Again, 5 activity nodes for each of SB and BB, making 1,457,890*9 *5 = 65,605,050 strategy nodes post-flop for each of SB and BB.
 
 That's awkward, but still within DRAM constraints of modern machines.
 
@@ -136,6 +136,21 @@ Betting is exactly the same as the Flop and Turn.
 
 We could store this on large hard drives - it's order 100's of TB's, but it seems rather awkward to calculate :D.
 
+
+---------------------------------------------------------------------------------------------------------------------
+
+So, clearly pre-Turn strategy can relatively comfortably be perfectly modeled.
+
+So, the next question is how to reduce the combinatorial explosion post-Flop.
+
+Ideas
+  - tune pre-Turn strategy and aggressively consolidate very low-probability paths in Turn and beyond. But how to tune without a Turn and River model?
+  - start by modeling Turn and River according to straight hand odds. How does that relate to mixed strategy?
+  - expand most frequent Turn/River nodes while using simple strategy for others - this would relate to 1/1000th of actual Turn nodes, and 1/1,000,000th of River node.
+  - probably better to clump more effectively, e.g. at River by actual hand and betting history (and which street hand was made).
+  - but would be super interesting to see what the distribution of strategy node probabilities is at River and turn (or even at flop!).
+  - i.e. do a slowly expanding strategy tree through flop, river and turn.
+  - I see there are commercial engines that maintain sparse models and then do real-time re-eval.
 
 
 
