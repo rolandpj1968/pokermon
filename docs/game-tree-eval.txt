@@ -1,0 +1,80 @@
+The main idea here is to start with a truncated tree, and gradually expand the strategy tree down popular paths. Non-expanded nodes are treated as show-down (perhaps we could do better?).
+
+We use hand sampling to back-propogate EV's, and then rebalance strategy action at each node.
+
+Once strategy has stabilised, we expand the tree at the most popular/high-ev nodes. Rinse and repeat.
+
+This is kinda-like MCTS with NN-like strategy back-propogation.
+
+Tree Definition
+===============
+
+We take a slightly different definition of tree to standard strategy tree. In a standard strategy tree (for an actor), each node corresponds to an action of the actor (action node), or to cards dealt (deal node). For multi-player nodes this can render the branching factor between action nodes unnecessarily large. For example in 10-up games, there are 9 oponent choices between our hero's actions, therefore 3^9 branch factor for limit and N^9 branch factor for pot or no-limit. So instead we allow explicit passive (i.e. opponent) nodes in our strategy trees.
+
+The flop is a high-branch-factor deal node. Can't do much about that except gather equivalence classes.
+
+Initialise the strategy at each new action node as a balanced mixed strategy (e.g. 1/3 fold, 1/3 call, 1/3 raise).
+
+Initial Tree
+============
+
+Pre-flop - separate strategy tree for each position, for each possible hole card combo, and possibly for each bank-role (#BB's).
+
+Start with hole cards for everyone only. Note that there are no action nodes at all in the initial tree. What will happen is that after the first round of monte-carlo eval all nodes will have the same probability, but we will then pick nodes with the highest EV's to expand (e.g. AA). At that stage the first actor left of the blinds will have at least one action node.
+ 
+
+Algorithm
+=========
+
+while(!done) {
+  rebalance-strategies
+  expand-tree
+}
+
+The algorithm proceeds in rounds. Each round deals with a fixed (truncated) strategy tree.
+
+Rebalancing Algorithm
+=====================
+
+First stage of the round is to rebalance (i.e. GTO solve) the strategy trees.
+
+while(!converged) {
+  for-each(leaf)
+    calculate-evs
+  }
+  backpropogate-evs
+
+  re-calculate strategy
+}
+
+For any leaf node, the EV's are calculated using a random sample of hands:
+
+Firstly, each leaf node will reflect a path with some fixed cards - initially the hole cards only. The remainder of the cards are dealt randomly to produce each hand in the sample. For each sample hand we then calculate the probability of reaching the leaf node, which is the product of all strategy choices along the path, and the (show-down) outcome of the leaf node (winner takes all over all actors still live). For strategy paths of one actor that are trancated in another actor along the path we assume the other actor chooses randomly (as per new node initialisation conditions).
+
+This is then summed over all sample hands, providing an (average) EV for the actor at that node, and an (average) probability of reaching the node.
+
+This is done for all leaf nodes. Note that we can use the same set of random hands for all leaf nodes with the same fixed cards. For preflop, for example, all leaf nodes below a particular hole-card pair. For post-flop, for example, all leaf nodes below a particular hole-card pair and flop.
+
+Now we have EV's for all leaf nodes. We then back-propogate EV's at each non-leaf node trivially: EV = (p_fold*ev_fold + p_call*ev_call + p_raise*ev_raise).
+
+Then we recalculate the strategy, like NN back-prop. r_fold = arctan(ev_fold), r_call = arctan(ev_call), r_raise = arctan(ev_raise). p_fold *= r_fold, p_call *= r_call, p_raise *= r_raise, renormalise p_fold + p_call + p_raise == 1.
+
+(Could use any similar fn to arctan like with NN)
+
+Convergence occurs when? Obvious choices are when the maximum change in strategy for any node is < E for some E. [There might be unstable oscillations between rebalancing rounds which will be, erm, interesting]
+
+We now have a GTO estimation, which should be arbitrarily accurate, for the truncated strategy tree.
+
+Expanding Tree
+==============
+
+Pick leaf nodes with the greatest probability of activity and or the greatest EV (suggest sorting on prob first and EV second) and expand them one more level.
+
+----------------------
+
+That's it. Will it work?
+
+The intent is that we get accurate GTO strategy by ignoring improbable subtrees, which we have to do cos we can't get anywhere near representing the full strategy tree.
+
+
+

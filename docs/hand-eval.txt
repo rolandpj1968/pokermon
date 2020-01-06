@@ -1,0 +1,22 @@
+Presuming we have a hand represented as a 14-bitfield for each of the 4 suits, where bit 0 and 13 are set for an Ace, then bits 1 through 12 are set for 2 through King.
+
+--
+
+Flush and straight flush: for each suit use the bit field as a FLUSH table look-up index, which returns a pair - (hand-type, bitfield) where hand-type is:
+       - Straight Flush
+       - Flush, or
+       - Nothing
+       
+For straight flush or flush the bitfield contains the (highest) 5 cards that make the hand (Ace is only set high or low), else the bitfield is 0.
+
+So, presuming only maximum of one suit can produce a (straight) flush, i.e. < 10 cards in the hand, we just do a lookup for each suit and or the results together.
+
+--
+
+Straight - or the 4 suits' bitfields together. Use that as a STRAIGHT table lookup index, which returns a pair - (hand-type, bitfield) as per the FLUSH table.
+
+--
+
+Quads/Full-House/Set/Pairs/Pair
+
+
