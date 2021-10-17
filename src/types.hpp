@@ -64,6 +64,24 @@ namespace Poker {
       suit(suit), rank(rank) {}
   };
 
+  // Card represented as a single u8 in [0, 52).
+  // For ease of manipulation bottom 2 bits are the suit, and hi bits are the rank.
+  struct U8CardT {
+    const u8 u8_card;
+
+    U8CardT(u8 u8_card):
+      u8_card(u8_card) {}
+
+    inline SuitT suit() const {
+      return (SuitT) (u8_card & 0x3);
+    }
+
+    // @return AceLow for Aces
+    inline RankT rank() const {
+      return (RankT) (u8_card >> 2);
+    }
+  };
+
   struct HandT {
     // Mmm - want these to be const but can't work out how to construct from card
     union {
