@@ -31,9 +31,9 @@ static std::pair<bool, RankT> eval_straight(const std::set<RankT>& ranks) {
       if(seq_len >= 5) {
 	found_straight = true;
 	highest_straight_rank = rank;
-      } else {
-	seq_len = 0;
-      }
+      }	
+    } else {
+      seq_len = 0;
     }
   }
 
@@ -141,6 +141,8 @@ static std::pair<bool, std::pair<RankT, RankT>> eval_full_house(const std::set<C
 static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_flush(const std::set<CardT>& cards, SuitT suit) {
   // Filter the cards by the given suit
   auto suited_ranks = filter_by_suit(cards, suit);
+  // Remove AceLow otherwise we count two aces
+  suited_ranks.erase(AceLow);
 
   if(suited_ranks.size() >= 5) {
     auto it = suited_ranks.rbegin();
@@ -149,7 +151,7 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_flush
     RankT r2 = *it++;
     RankT r3 = *it++;
     RankT r4 = *it++;
-    return std::make_pair(false, std::make_tuple(r0, r1, r2, r3, r4));
+    return std::make_pair(true, std::make_tuple(r0, r1, r2, r3, r4));
   } else {
     return std::make_pair(false, std::tuple<RankT, RankT, RankT, RankT, RankT>());
   }
