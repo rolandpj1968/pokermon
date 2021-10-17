@@ -21,7 +21,7 @@ namespace Poker {
 	std::vector<Poker::U8CardT> cards;
 	cards.reserve(n);
 
-	bool dealt[52] = {0};
+	bool dealt[52] = {};
 
 	while(cards.size() < n) {
 	  int card = single_pack_dist(rng);

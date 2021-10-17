@@ -10,7 +10,7 @@ typedef uint64_t u64;
 
 namespace Poker {
 
-  enum SuitT {
+  enum SuitT: u8 {
     Spades,
     Hearts,
     Diamonds,
@@ -18,7 +18,9 @@ namespace Poker {
     NSuits
   };
 
-  enum RankT {
+  static const char* SUIT_CHARS = "SHDC";
+
+  enum RankT: u8 {
     AceLow,
     Two,
     Three,
@@ -36,6 +38,8 @@ namespace Poker {
     NRanks
   };
 
+  static const char* RANK_CHARS = "A23456789XJQKA";
+  
   // Note that Ace appears in bit 0 and bit 13 typically
   typedef u16 RankBitsT;
 
@@ -56,14 +60,6 @@ namespace Poker {
     (1 << AceLow) | (1 << Ace),
   };
 
-  struct CardT {
-    const SuitT suit;
-    const RankT rank;
-
-    CardT(const SuitT suit, const RankT rank):
-      suit(suit), rank(rank) {}
-  };
-
   // Card represented as a single u8 in [0, 52).
   // For ease of manipulation bottom 2 bits are the suit, and hi bits are the rank.
   struct U8CardT {
@@ -79,6 +75,22 @@ namespace Poker {
     // @return AceLow for Aces
     inline RankT rank() const {
       return (RankT) (u8_card >> 2);
+    }
+  };
+
+  struct CardT {
+    const SuitT suit;
+    const RankT rank;
+
+    CardT(const SuitT suit, const RankT rank):
+      suit(suit), rank(rank) {}
+
+    CardT(const U8CardT u8_card):
+      suit(u8_card.suit()), rank(u8_card.rank()) {}
+
+    // TODO can this be auto-defined somehow?
+    bool operator<(const CardT& other) const {
+      return suit < other.suit || (suit == other.suit && rank < other.rank);
     }
   };
 
