@@ -144,7 +144,12 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_flush
 
   if(suited_ranks.size() >= 5) {
     auto it = suited_ranks.rbegin();
-    return std::make_pair(false, std::make_tuple(*it++, *it++, *it++, *it++, *it++));
+    RankT r0 = *it++;
+    RankT r1 = *it++;
+    RankT r2 = *it++;
+    RankT r3 = *it++;
+    RankT r4 = *it++;
+    return std::make_pair(false, std::make_tuple(r0, r1, r2, r3, r4));
   } else {
     return std::make_pair(false, std::tuple<RankT, RankT, RankT, RankT, RankT>());
   }
@@ -380,8 +385,12 @@ static std::pair<HandRankingT, std::tuple<RankT, RankT, RankT, RankT, RankT>> ev
   {
     auto ranks_counts = get_rank_counts(unique_cards);
     auto it = ranks_counts.rbegin();
-    // Note - only valid if there are no higher evals
-    return std::make_pair(HighCard, std::make_tuple((it++)->first, (it++)->first, (it++)->first, (it++)->first, (it++)->first));
+    RankT r0 = (it++)->first;
+    RankT r1 = (it++)->first;
+    RankT r2 = (it++)->first;
+    RankT r3 = (it++)->first;
+    RankT r4 = (it++)->first;
+    return std::make_pair(HighCard, std::make_tuple(r0, r1, r2, r3, r4));
   }
 }
 

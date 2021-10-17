@@ -139,6 +139,18 @@ namespace Poker {
     NHandRankings
   };
 
+  static const char* HAND_EVALS[] = {
+    "High-Card",
+    "Pair",
+    "Two-Pairs",
+    "Set",
+    "Straight",
+    "Flush",
+    "Full-House",
+    "Four-Of-A-Kind",
+    "Straight-Flush",
+  };
+
   // Represents the detailed extra value of a hand, beyond the hand ranking, such as kickers:
   //
   //  - for a Pair, the hi u16 is the rank of the pair, and the low u16 is the rank-bits of the remaining (three) cards
