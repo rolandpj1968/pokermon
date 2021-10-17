@@ -57,18 +57,20 @@ This is done for all leaf nodes. Note that we can use the same set of random han
 
 Now we have EV's for all leaf nodes. We then back-propogate EV's at each non-leaf node trivially: EV = (p_fold*ev_fold + p_call*ev_call + p_raise*ev_raise).
 
-Then we recalculate the strategy, like NN back-prop. r_fold = arctan(ev_fold), r_call = arctan(ev_call), r_raise = arctan(ev_raise). p_fold *= r_fold, p_call *= r_call, p_raise *= r_raise, renormalise p_fold + p_call + p_raise == 1.
+Then we recalculate the strategy, like NN back-prop. r_fold = tanh(ev_fold), r_call = tanh(ev_call), r_raise = tanh(ev_raise). p_fold *= (r_fold+1), p_call *= (r_call+1), p_raise *= (r_raise+1), renormalise p_fold + p_call + p_raise == 1.
 
-(Could use any similar fn to arctan like with NN)
+(Could use any similar fn to tanh mapping (-inf,+inf) to finite range like with NN)
 
-Convergence occurs when? Obvious choices are when the maximum change in strategy for any node is < E for some E. [There might be unstable oscillations between rebalancing rounds which will be, erm, interesting]
+Convergence occurs when? Obvious choices are when the maximum (absolute and/or relative) change in strategy for any node is < E for some E. [There might be unstable oscillations between rebalancing rounds which will be, erm, interesting]
 
 We now have a GTO estimation, which should be arbitrarily accurate, for the truncated strategy tree.
 
 Expanding Tree
 ==============
 
-Pick leaf nodes with the greatest probability of activity and or the greatest EV (suggest sorting on prob first and EV second) and expand them one more level.
+Pick leaf nodes with the greatest probability of activity and/or the greatest EV (suggest sorting on prob first and EV second) and expand them one more level.
+
+Open question as to how many nodes to expand each epoch.
 
 ----------------------
 

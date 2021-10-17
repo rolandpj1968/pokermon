@@ -1,5 +1,7 @@
 Presuming we have a hand represented as a 14-bitfield for each of the 4 suits, where bit 0 and 13 are set for an Ace, then bits 1 through 12 are set for 2 through King.
 
+For straight and straight flush detection we can remove the hi bit and do a 2^13 table lookup - i.e. 8KB entries.
+
 --
 
 Flush and straight flush: for each suit use the bit field as a FLUSH table look-up index, which returns a pair - (hand-type, bitfield) where hand-type is:
@@ -18,5 +20,25 @@ Straight - or the 4 suits' bitfields together. Use that as a STRAIGHT table look
 --
 
 Quads/Full-House/Set/Pairs/Pair
+
+Again, just need the 2^13 lookup table for the widening:
+
+For each suit do a lookup of the bit field into a widening bitfield of 39-bit values that essentially is the same bitmap but with two zero bits between each original bit.
+
+Add the widened bit fields of all 4 suits = W
+
+Quads: If there is one or more quad then (at least) one of the 2^2 bits will be set.
+       So AND W with 0b100100100...100. If this is non-zero then we have a quad.
+       Find the highest such bit. Then find the kicker by removing the quad bit from the or of all suits and finding the hi bit.
+
+Trips: Otherwise there are no 2^2 bits set. If there is one or more trip then we have the bit pattern 0b011 in (at least) one of the ranks.
+       Compute W & (W>>1) & 0x001001001...001. If this is non-zero then we have a set.
+       Find the highest such bit. Then check for a pair (-> full house), otherwise find the two kickers from the or of all suits and looking up the two hi bits.
+
+Pair(s): After removing the possible hi trip bits from W, then if there are any (remaining) pairs, then the 2^1 bit will be set for those ranks.
+       Compute W & 0x010010010...010. If this is non-zero then we have one or more pairs.
+
+
+                                                                                    
 
 
