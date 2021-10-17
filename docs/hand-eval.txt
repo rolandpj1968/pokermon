@@ -9,9 +9,9 @@ Flush and straight flush: for each suit use the bit field as a FLUSH table look-
        - Flush, or
        - Nothing
        
-For straight flush or flush the bitfield contains the (highest) 5 cards that make the hand (Ace is only set high or low), else the bitfield is 0.
+For straight flush or flush the bitfield contains the (highest) 5 cards that make the hand (Ace is only set high or low), else the bitfield is 0. Note that a straight flush A/2/3/4/5 has Ace low but beats a non-straight flush with A high.
 
-So, presuming only maximum of one suit can produce a (straight) flush, i.e. < 10 cards in the hand, we just do a lookup for each suit and or the results together.
+So, presuming only maximum of one suit can produce a (possibly straight) flush, i.e. < 10 cards in the hand, we just do a lookup for each suit and or the results together.
 
 --
 

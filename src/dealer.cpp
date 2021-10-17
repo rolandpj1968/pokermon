@@ -19,7 +19,7 @@ static void dump_hand_counts(const std::map<std::pair<Poker::CardT, Poker::CardT
 }
 
 int main() {
-  const int N_DEALS = 10000000;
+  const int N_DEALS = 100000000;
   const int N_CARDS = 9;
 
   std::seed_seq seed{1, 2, 3, 4, 5};

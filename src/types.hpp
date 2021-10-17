@@ -126,7 +126,7 @@ namespace Poker {
     return hand;
   }
 
-  enum HandRankingT {
+  enum HandRankingT: u8 {
     HighCard,
     Pair,
     TwoPair,
