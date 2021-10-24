@@ -38,7 +38,7 @@ namespace Poker {
     NRanks
   };
 
-  static const char* RANK_CHARS = "A23456789XJQKA";
+  static const char* RANK_CHARS = "a23456789XJQKA";
   
   // Note that Ace appears in bit 0 and bit 13 typically
   typedef u16 RankBitsT;

@@ -7,5 +7,5 @@ hand-eval: hand-eval.cpp hand-eval.cpp types.hpp Makefile
 eval-10: eval-p0-at-2-to-10-up.cpp dealer.hpp types.hpp hand-eval.hpp hand-eval.cpp Makefile
 	g++ -O3 -o eval-10 eval-p0-at-2-to-10-up.cpp hand-eval.cpp
 
-preflop-gto: preflop-gto.cpp dealer.hpp types.hpp hand-eval.hpp hand-eval.cpp Makefile
-	g++ -Wall -O3 -o preflop-gto preflop-gto.cpp hand-eval.cpp
+preflop-gto: preflop-gto.cpp dealer.hpp types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
+	g++ -Wall -o preflop-gto preflop-gto.cpp hand-eval.cpp

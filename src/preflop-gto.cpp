@@ -168,9 +168,9 @@ static std::pair<double, double> eval_showdown_profits(HeadsUpWinner winner, dou
   double p0_profit = 0.0;
   double p1_profit = 0.0;
   if(winner == P0Wins) {
-    p0_profit = bet;
+    p0_profit = +bet;
   } else if(winner == P1Wins) {
-    p1_profit = bet;
+    p1_profit = -bet;
   }
   return std::make_pair(p0_profit, p1_profit);
 }
@@ -716,6 +716,53 @@ static void dump_p1_strategy(const HeadsUpP1PreflopStrategy& p1_strategy) {
   }
 }
 
+static void dump_hand_eval(int rank1, int rank2, bool suited, const HeadsUpPlayerHoleHandEval& hand_eval) {
+  printf("%c%c%c", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf(" activity: %9.4lf p0 %9.4lf p1 %9.4lf\n", hand_eval.eval.activity, hand_eval.eval.p0_profit, hand_eval.eval.p1_profit);
+}
+
+static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
+  // Pocket pairs
+  bool suited = false;
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    int rank1 = rank == Ace ? AceLow : rank;
+
+    dump_hand_eval(rank1, rank1, suited, eval.hand_evals[suited][rank1][rank1]);
+  }
+  
+  printf("\n\n");
+  
+  // Suited
+  suited = true;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+  
+      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2]);
+    }
+
+    printf("\n");
+  }
+
+  printf("\n\n");
+  
+  // Off-suit
+  suited = false;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+  
+      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2]);
+    }
+
+    printf("\n");
+  }
+}
+
 static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy& p0_strategy, const HeadsUpP1PreflopStrategy p1_strategy, int N_DEALS) {
   if(false) {
     printf("Evaluating preflop strategies\n\n");
@@ -732,8 +779,9 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
   
   for(int deal_no = 0; deal_no < N_DEALS; deal_no++) {
     auto cards = dealer.deal(2+2+3+1+1);
+    printf("Dealt %ld cards...\n", cards.size());
 
-    auto p0_hole = std::make_pair(Poker::CardT(cards[0]), Poker::CardT(cards[1]));
+    auto p0_hole = std::make_pair(Poker::CardT(cards[0+0]), Poker::CardT(cards[0+1]));
     auto p1_hole = std::make_pair(Poker::CardT(cards[2+0]), Poker::CardT(cards[2+1]));
 
     auto p0_hole_norm = Poker::holdem_normal(p0_hole.first, p0_hole.second);
@@ -757,6 +805,14 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
       }
     }
 
+    if(true) {
+      printf("Deal: p0 %c%c+%c%c p0-norm %c%c+%c%c p1 %c%c+%c%c p1-norm %c%c+%c%c\n",
+	     RANK_CHARS[p0_hole.first.rank], SUIT_CHARS[p0_hole.first.suit], RANK_CHARS[p0_hole.second.rank], SUIT_CHARS[p0_hole.second.suit], 
+	     RANK_CHARS[p0_hole_norm.first.rank], SUIT_CHARS[p0_hole_norm.first.suit], RANK_CHARS[p0_hole_norm.second.rank], SUIT_CHARS[p0_hole_norm.second.suit], 
+	     RANK_CHARS[p1_hole.first.rank], SUIT_CHARS[p1_hole.first.suit], RANK_CHARS[p1_hole.second.rank], SUIT_CHARS[p1_hole.second.suit], 
+	     RANK_CHARS[p1_hole_norm.first.rank], SUIT_CHARS[p1_hole_norm.first.suit], RANK_CHARS[p1_hole_norm.second.rank], SUIT_CHARS[p1_hole_norm.second.suit]);
+    }
+    
     bool p0_is_suited = p0_hole_norm.first.suit == p0_hole_norm.second.suit;
     RankT p0_rank1 = p0_hole_norm.first.rank == Ace ? AceLow : p0_hole_norm.first.rank;
     RankT p0_rank2 = p0_hole_norm.second.rank == Ace ? AceLow : p0_hole_norm.second.rank;
@@ -772,12 +828,21 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
     HeadsUpPlayerHoleHandEval& p1_hand_eval = p1_eval.hand_evals[p1_is_suited][p1_rank1][p1_rank2];
 
     eval_heads_up_preflop_deal(p0_hand_strategy, p0_hand_eval, p1_hand_strategy, p1_hand_eval, winner);
-    
+  }
+
+  if(true) {
+    // What is the outcome
+    printf("Player 0 - Small Blind - outcomes\n\n");
+    dump_player_eval(p0_eval);
+    printf("\n\n");
+    printf("Player 1 - Big Blind - outcomes\n\n");
+    dump_player_eval(p1_eval);
+    printf("\n\n");
   }
 }
 
 int main() {
-  int N_DEALS = 100000;
+  int N_DEALS = 1; //10608/*52*51*4*/;
   
   HeadsUpP0PreflopStrategy p0_strategy;
   HeadsUpP1PreflopStrategy p1_strategy;
