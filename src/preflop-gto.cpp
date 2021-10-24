@@ -153,6 +153,8 @@ struct HeadsUpPlayerPreflopEval {
 
 enum HeadsUpWinner { P0Wins, P1Wins, P0P1Push };
 
+static const char* WINNER[] = { "P0", "P1", "Push" };
+
 static void update_eval(HeadsUpNodeEval& eval, double p, double p0_profit, double p1_profit) {
   eval.activity += p;
   eval.p0_profit += p * p0_profit;
@@ -169,8 +171,10 @@ static std::pair<double, double> eval_showdown_profits(HeadsUpWinner winner, dou
   double p1_profit = 0.0;
   if(winner == P0Wins) {
     p0_profit = +bet;
-  } else if(winner == P1Wins) {
     p1_profit = -bet;
+  } else if(winner == P1Wins) {
+    p0_profit = -bet;
+    p1_profit = +bet;
   }
   return std::make_pair(p0_profit, p1_profit);
 }
@@ -198,7 +202,7 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
     p1_profit += p0_fold_p * p0_fold_p1_profit;
     
   } // p0_fold
-  
+
   { // p0_call
     
     double p0_call_p = p0_strategy.open.call_p;
@@ -244,6 +248,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
       
     } // p1_call
 
+    //#ifdef no_p1_raise
+    
     { // p1_raise
       double p0_call_p1_raise_p = p0_call_p * p1_strategy.p0_called.raise_p;
 
@@ -413,6 +419,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
       p0_call_p1_profit += p0_call_p1_raise_p * p0_call_p1_raise_p1_profit;
       
     } // p1_call
+
+    //#endif // no_p1_raise
     
     update_evals(p0_eval.p0_called.eval,
 		 p1_eval.p0_called.eval,
@@ -424,6 +432,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
     p1_profit += p0_call_p * p0_call_p1_profit;
     
   } // p0_call
+  
+  //#if 0
   
   // p0_raise
   {
@@ -594,6 +604,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
     p1_profit += p0_raise_p * p0_raise_p1_profit;
     
   } // p0_raise
+
+  //#endif // 0
   
   update_evals(p0_eval.eval,
 	       p1_eval.eval,
@@ -717,8 +729,10 @@ static void dump_p1_strategy(const HeadsUpP1PreflopStrategy& p1_strategy) {
 }
 
 static void dump_hand_eval(int rank1, int rank2, bool suited, const HeadsUpPlayerHoleHandEval& hand_eval) {
+  if(hand_eval.eval.activity != 0.0) {
   printf("%c%c%c", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf(" activity: %9.4lf p0 %9.4lf p1 %9.4lf\n", hand_eval.eval.activity, hand_eval.eval.p0_profit, hand_eval.eval.p1_profit);
+  }
 }
 
 static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
@@ -779,7 +793,6 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
   
   for(int deal_no = 0; deal_no < N_DEALS; deal_no++) {
     auto cards = dealer.deal(2+2+3+1+1);
-    printf("Dealt %ld cards...\n", cards.size());
 
     auto p0_hole = std::make_pair(Poker::CardT(cards[0+0]), Poker::CardT(cards[0+1]));
     auto p1_hole = std::make_pair(Poker::CardT(cards[2+0]), Poker::CardT(cards[2+1]));
@@ -787,6 +800,14 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
     auto p0_hole_norm = Poker::holdem_normal(p0_hole.first, p0_hole.second);
     auto p1_hole_norm = Poker::holdem_normal(p1_hole.first, p1_hole.second);
 
+    if(false) {
+      printf("Deal: p0 %c%c+%c%c p0-norm %c%c+%c%c p1 %c%c+%c%c p1-norm %c%c+%c%c\n",
+	     RANK_CHARS[p0_hole.first.rank], SUIT_CHARS[p0_hole.first.suit], RANK_CHARS[p0_hole.second.rank], SUIT_CHARS[p0_hole.second.suit], 
+	     RANK_CHARS[p0_hole_norm.first.rank], SUIT_CHARS[p0_hole_norm.first.suit], RANK_CHARS[p0_hole_norm.second.rank], SUIT_CHARS[p0_hole_norm.second.suit], 
+	     RANK_CHARS[p1_hole.first.rank], SUIT_CHARS[p1_hole.first.suit], RANK_CHARS[p1_hole.second.rank], SUIT_CHARS[p1_hole.second.suit], 
+	     RANK_CHARS[p1_hole_norm.first.rank], SUIT_CHARS[p1_hole_norm.first.suit], RANK_CHARS[p1_hole_norm.second.rank], SUIT_CHARS[p1_hole_norm.second.suit]);
+    }
+    
     HeadsUpWinner winner;
     {
       auto flop = std::make_tuple(Poker::CardT(cards[2*2]), Poker::CardT(cards[2*2 + 1]), Poker::CardT(cards[2*2 + 2]));
@@ -803,16 +824,17 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
       } else {
 	winner = P0P1Push;
       }
+
+      if(false) {
+	printf("           flop %c%c+%c%c+%c%c turn %c%c river %c%c\n",
+	       RANK_CHARS[std::get<0>(flop).rank], SUIT_CHARS[std::get<0>(flop).suit], RANK_CHARS[std::get<1>(flop).rank], SUIT_CHARS[std::get<1>(flop).suit], RANK_CHARS[std::get<2>(flop).rank], SUIT_CHARS[std::get<2>(flop).suit],
+	       RANK_CHARS[turn.rank], SUIT_CHARS[turn.suit],
+	       RANK_CHARS[river.rank], SUIT_CHARS[river.suit]
+	       );
+	printf("  p0 hand %s p1 hand %s winner %s\n", HAND_EVALS[p0_hand_eval.first], HAND_EVALS[p1_hand_eval.first], WINNER[winner]);
+      }
     }
 
-    if(true) {
-      printf("Deal: p0 %c%c+%c%c p0-norm %c%c+%c%c p1 %c%c+%c%c p1-norm %c%c+%c%c\n",
-	     RANK_CHARS[p0_hole.first.rank], SUIT_CHARS[p0_hole.first.suit], RANK_CHARS[p0_hole.second.rank], SUIT_CHARS[p0_hole.second.suit], 
-	     RANK_CHARS[p0_hole_norm.first.rank], SUIT_CHARS[p0_hole_norm.first.suit], RANK_CHARS[p0_hole_norm.second.rank], SUIT_CHARS[p0_hole_norm.second.suit], 
-	     RANK_CHARS[p1_hole.first.rank], SUIT_CHARS[p1_hole.first.suit], RANK_CHARS[p1_hole.second.rank], SUIT_CHARS[p1_hole.second.suit], 
-	     RANK_CHARS[p1_hole_norm.first.rank], SUIT_CHARS[p1_hole_norm.first.suit], RANK_CHARS[p1_hole_norm.second.rank], SUIT_CHARS[p1_hole_norm.second.suit]);
-    }
-    
     bool p0_is_suited = p0_hole_norm.first.suit == p0_hole_norm.second.suit;
     RankT p0_rank1 = p0_hole_norm.first.rank == Ace ? AceLow : p0_hole_norm.first.rank;
     RankT p0_rank2 = p0_hole_norm.second.rank == Ace ? AceLow : p0_hole_norm.second.rank;
@@ -842,7 +864,7 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
 }
 
 int main() {
-  int N_DEALS = 1; //10608/*52*51*4*/;
+  int N_DEALS = 100000; //10608/*52*51*4*/;
   
   HeadsUpP0PreflopStrategy p0_strategy;
   HeadsUpP1PreflopStrategy p1_strategy;
