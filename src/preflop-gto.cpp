@@ -613,7 +613,18 @@ static void dump_p0_hand_strategy(int rank1, int rank2, bool suited, const Heads
   printf("  raise-raise:            "); dump_fold_call_raise_strategy(hand_strategy.p0_raised_p1_raised); printf("\n");
 }
 
+static void dump_p1_hand_strategy(int rank1, int rank2, bool suited, const HeadsUpP1HoleHandStrategy& hand_strategy) {
+  printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf("  call:                   "); dump_fold_call_raise_strategy(hand_strategy.p0_called); printf("\n");
+  printf("  call-raise-raise:       "); dump_fold_call_raise_strategy(hand_strategy.p0_called_p1_raised_p0_raised); printf("\n");
+  printf("  raise:                  "); dump_fold_call_raise_strategy(hand_strategy.p0_raised); printf("\n");
+  printf("  raise-raise-raise:      "); dump_fold_call_strategy(hand_strategy.p0_raised_p1_raised_p0_raised); printf("\n");
+}
+
 static void dump_p0_strategy(const HeadsUpP0PreflopStrategy& p0_strategy) {
+
+  printf("Player 0 - Small Blind - Strategy:\n\n");
+  
   // Pocket pairs
   bool suited = false;
   for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
@@ -655,9 +666,56 @@ static void dump_p0_strategy(const HeadsUpP0PreflopStrategy& p0_strategy) {
   }
 }
 
+static void dump_p1_strategy(const HeadsUpP1PreflopStrategy& p1_strategy) {
+
+  printf("Player 1 - Big Blind - Strategy:\n\n");
+  
+  // Pocket pairs
+  bool suited = false;
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    int rank1 = rank == Ace ? AceLow : rank;
+
+    dump_p1_hand_strategy(rank1, rank1, suited, p1_strategy.hand_strategies[suited][rank1][rank1]);
+  }
+  
+  printf("\n\n");
+  
+  // Suited
+  suited = true;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+  
+      dump_p1_hand_strategy(rank1, rank2, suited, p1_strategy.hand_strategies[suited][rank1][rank2]);
+    }
+
+    printf("\n");
+  }
+
+  printf("\n\n");
+  
+  // Off-suit
+  suited = false;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+  
+      dump_p1_hand_strategy(rank1, rank2, suited, p1_strategy.hand_strategies[suited][rank1][rank2]);
+    }
+
+    printf("\n");
+  }
+}
+
 static void evaluate_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_strategy, HeadsUpP1PreflopStrategy p1_strategy) {
+  printf("Evaluating preflop strategies\n\n");
   dump_p0_strategy(p0_strategy);
-  //printf("p0_strategy open - fold: %4.3lf call: %4.3lf raise: %4.3lf\n", p0_strategy.open.fold_p, p0_strategy.open.call_p, p0_strategy.open.raise_p);
+  printf("\n\n");
+  dump_p1_strategy(p1_strategy);
 }
 
 int main() {
