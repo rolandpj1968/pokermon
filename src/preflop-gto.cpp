@@ -800,7 +800,7 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
     auto p0_hole_norm = Poker::holdem_normal(p0_hole.first, p0_hole.second);
     auto p1_hole_norm = Poker::holdem_normal(p1_hole.first, p1_hole.second);
 
-    if(false) {
+    if(true) {
       printf("Deal: p0 %c%c+%c%c p0-norm %c%c+%c%c p1 %c%c+%c%c p1-norm %c%c+%c%c\n",
 	     RANK_CHARS[p0_hole.first.rank], SUIT_CHARS[p0_hole.first.suit], RANK_CHARS[p0_hole.second.rank], SUIT_CHARS[p0_hole.second.suit], 
 	     RANK_CHARS[p0_hole_norm.first.rank], SUIT_CHARS[p0_hole_norm.first.suit], RANK_CHARS[p0_hole_norm.second.rank], SUIT_CHARS[p0_hole_norm.second.suit], 
@@ -825,7 +825,7 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
 	winner = P0P1Push;
       }
 
-      if(false) {
+      if(true) {
 	printf("           flop %c%c+%c%c+%c%c turn %c%c river %c%c\n",
 	       RANK_CHARS[std::get<0>(flop).rank], SUIT_CHARS[std::get<0>(flop).suit], RANK_CHARS[std::get<1>(flop).rank], SUIT_CHARS[std::get<1>(flop).suit], RANK_CHARS[std::get<2>(flop).rank], SUIT_CHARS[std::get<2>(flop).suit],
 	       RANK_CHARS[turn.rank], SUIT_CHARS[turn.suit],
@@ -852,7 +852,7 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
     eval_heads_up_preflop_deal(p0_hand_strategy, p0_hand_eval, p1_hand_strategy, p1_hand_eval, winner);
   }
 
-  if(true) {
+  if(false) {
     // What is the outcome
     printf("Player 0 - Small Blind - outcomes\n\n");
     dump_player_eval(p0_eval);
@@ -864,7 +864,7 @@ static void evaluate_heads_up_preflop_strategies(const HeadsUpP0PreflopStrategy&
 }
 
 int main() {
-  int N_DEALS = 100000; //10608/*52*51*4*/;
+  int N_DEALS = 20; //10608/*52*51*4*/;
   
   HeadsUpP0PreflopStrategy p0_strategy;
   HeadsUpP1PreflopStrategy p1_strategy;
