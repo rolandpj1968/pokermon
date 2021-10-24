@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <utility>
 
 #include "types.hpp"
@@ -172,14 +173,14 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
   
   { // p0_fold
     
-    double p0_fold_p = p0.strategy.open.fold_p;
+    double p0_fold_p = p0_strategy.open.fold_p;
     
     // P0 loses small blind - i.e. 0.5; P1 wins that SB of 0.5
     double p0_fold_p0_profit = -0.5;
     double p0_fold_p1_profit = +0.5;
 
-    update_evals(p0.eval.p0_folded.eval,
-		 p1.eval.p0_folded.eval,
+    update_evals(p0_eval.p0_folded.eval,
+		 p1_eval.p0_folded.eval,
 		 p0_fold_p,
 		 p0_fold_p0_profit,
 		 p0_fold_p1_profit);
@@ -191,20 +192,20 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
   
   { // p0_call
     
-    double p0_call_p = p0.strategy.open.call_p;
+    double p0_call_p = p0_strategy.open.call_p;
     double p0_call_p0_profit = 0.0;
     double p0_call_p1_profit = 0.0;
       
     { // p1_fold
       
-      double p0_call_p1_fold_p = p0_call_p * p1.strategy.p0_called.fold_p;
+      double p0_call_p1_fold_p = p0_call_p * p1_strategy.p0_called.fold_p;
       
       // P1 folds BB - i.e. 1.0, P0 wins that 1.0
       double p0_call_p1_fold_p0_profit = +1.0;
       double p0_call_p1_fold_p1_profit = -1.0;
 								       
-      update_evals(p0.eval.p0_called.p1_folded.eval,
-		   p1.eval.p0_called.p1_folded.eval,
+      update_evals(p0_eval.p0_called.p1_folded.eval,
+		   p1_eval.p0_called.p1_folded.eval,
 		   p0_call_p1_fold_p,
 		   p0_call_p1_fold_p0_profit,
 		   p0_call_p1_fold_p1_profit);
@@ -216,15 +217,15 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
     { // p1_call
       
-      double p0_call_p1_call_p = p0_call_p * p1.strategy.p0_called.call_p;
+      double p0_call_p1_call_p = p0_call_p * p1_strategy.p0_called.call_p;
 
       // Both players have 1.0 in the pot
       auto p0_call_p1_call_p0_p1_profit = eval_showdown_profits(winner, 1.0);
       double p0_call_p1_call_p0_profit = p0_call_p1_call_p0_p1_profit.first;
       double p0_call_p1_call_p1_profit = p0_call_p1_call_p0_p1_profit.second;
       
-      update_evals(p0.eval.p0_called.p1_called.eval,
-		   p1.eval.p0_called.p1_called.eval,
+      update_evals(p0_eval.p0_called.p1_called.eval,
+		   p1_eval.p0_called.p1_called.eval,
 		   p0_call_p1_call_p,
 		   p0_call_p1_call_p0_profit,
 		   p0_call_p1_call_p1_profit);
@@ -235,21 +236,21 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
     } // p1_call
 
     { // p1_raise
-      double p0_call_p1_raise_p = p0_call_p * p1.strategy.p0_called.raise_p;
+      double p0_call_p1_raise_p = p0_call_p * p1_strategy.p0_called.raise_p;
 
       double p0_call_p1_raise_p0_profit = 0.0;
       double p0_call_p1_raise_p1_profit = 0.0;
 
       { // p0_fold
 	
-        double p0_call_p1_raise_p0_fold_p = p0_call_p1_raise_p * p0.strategy.p0_called_p1_raised.fold_p;
+        double p0_call_p1_raise_p0_fold_p = p0_call_p1_raise_p * p0_strategy.p0_called_p1_raised.fold_p;
 
 	// P0 loses current bet of 1.0; P1 wins it
 	double p0_call_p1_raise_p0_fold_p0_profit = -1.0;
 	double p0_call_p1_raise_p0_fold_p1_profit = +1.0;
 	
-	update_evals(p0.eval.p0_called.p1_raised.p0_folded.eval,
-		     p1.eval.p0_called.p1_raised.p0_folded.eval,
+	update_evals(p0_eval.p0_called.p1_raised.p0_folded.eval,
+		     p1_eval.p0_called.p1_raised.p0_folded.eval,
 		     p0_call_p1_raise_p0_fold_p,
 		     p0_call_p1_raise_p0_fold_p0_profit,
 		     p0_call_p1_raise_p0_fold_p1_profit);
@@ -261,15 +262,15 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
       { // p0_call
 	
-        double p0_call_p1_raise_p0_call_p = p0_call_p1_raise_p * p0.strategy.p0_called_p1_raised.call_p;
+        double p0_call_p1_raise_p0_call_p = p0_call_p1_raise_p * p0_strategy.p0_called_p1_raised.call_p;
 
 	// Both players have 2.0 in the pot
 	auto p0_call_p1_raise_p0_call_p0_p1_profit = eval_showdown_profits(winner, 2.0);
 	double p0_call_p1_raise_p0_call_p0_profit = p0_call_p1_raise_p0_call_p0_p1_profit.first;
 	double p0_call_p1_raise_p0_call_p1_profit = p0_call_p1_raise_p0_call_p0_p1_profit.second;
 	
-	update_evals(p0.eval.p0_called.p1_raised.p0_called.eval,
-		     p1.eval.p0_called.p1_raised.p0_called.eval,
+	update_evals(p0_eval.p0_called.p1_raised.p0_called.eval,
+		     p1_eval.p0_called.p1_raised.p0_called.eval,
 		     p0_call_p1_raise_p0_call_p,
 		     p0_call_p1_raise_p0_call_p0_profit,
 		     p0_call_p1_raise_p0_call_p1_profit);
@@ -281,21 +282,21 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
       { // p0_raise
 	
-        double p0_call_p1_raise_p0_raise_p = p0_call_p1_raise_p * p0.strategy.p0_called_p1_raised.raise_p;
+        double p0_call_p1_raise_p0_raise_p = p0_call_p1_raise_p * p0_strategy.p0_called_p1_raised.raise_p;
 
 	double p0_call_p1_raise_p0_raise_p0_profit = 0.0;
 	double p0_call_p1_raise_p0_raise_p1_profit = 0.0;
 
 	{ // p1_fold
 	  
-	  double p0_call_p1_raise_p0_raise_p1_fold_p = p0_call_p1_raise_p0_raise_p * p1.strategy.p0_called_p1_raised_p0_raised.fold_p;
+	  double p0_call_p1_raise_p0_raise_p1_fold_p = p0_call_p1_raise_p0_raise_p * p1_strategy.p0_called_p1_raised_p0_raised.fold_p;
 
 	  // P1 has 2.0 in the pot; P0 wins this; P1 loses it.
 	  double p0_call_p1_raise_p0_raise_p1_fold_p0_profit = +2.0;
 	  double p0_call_p1_raise_p0_raise_p1_fold_p1_profit = -2.0;
 
-	  update_evals(p0.eval.p0_called.p1_raised.p0_raised.p1_folded.eval,
-		       p1.eval.p0_called.p1_raised.p0_raised.p1_folded.eval,
+	  update_evals(p0_eval.p0_called.p1_raised.p0_raised.p1_folded.eval,
+		       p1_eval.p0_called.p1_raised.p0_raised.p1_folded.eval,
 		       p0_call_p1_raise_p0_raise_p1_fold_p,
 		       p0_call_p1_raise_p0_raise_p1_fold_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_fold_p1_profit);
@@ -307,15 +308,15 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
 	{ // p1_call
 	  
-	  double p0_call_p1_raise_p0_raise_p1_call_p = p0_call_p1_raise_p0_raise_p * p1.strategy.p0_called_p1_raised_p0_raised.call_p;
+	  double p0_call_p1_raise_p0_raise_p1_call_p = p0_call_p1_raise_p0_raise_p * p1_strategy.p0_called_p1_raised_p0_raised.call_p;
 
 	  // Both players have 3.0 in the pot
 	  auto p0_call_p1_raise_p0_raise_p1_call_p0_p1_profit = eval_showdown_profits(winner, 3.0);
 	  double p0_call_p1_raise_p0_raise_p1_call_p0_profit = p0_call_p1_raise_p0_raise_p1_call_p0_p1_profit.first;
 	  double p0_call_p1_raise_p0_raise_p1_call_p1_profit = p0_call_p1_raise_p0_raise_p1_call_p0_p1_profit.second;
 
-	  update_evals(p0.eval.p0_called.p1_raised.p0_raised.p1_called.eval,
-		       p1.eval.p0_called.p1_raised.p0_raised.p1_called.eval,
+	  update_evals(p0_eval.p0_called.p1_raised.p0_raised.p1_called.eval,
+		       p1_eval.p0_called.p1_raised.p0_raised.p1_called.eval,
 		       p0_call_p1_raise_p0_raise_p1_call_p,
 		       p0_call_p1_raise_p0_raise_p1_call_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_call_p1_profit);
@@ -327,21 +328,21 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
 	{ // p1_raise
 	  
-	  double p0_call_p1_raise_p0_raise_p1_raise_p = p0_call_p1_raise_p0_raise_p * p1.strategy.p0_called_p1_raised_p0_raised.raise_p;
+	  double p0_call_p1_raise_p0_raise_p1_raise_p = p0_call_p1_raise_p0_raise_p * p1_strategy.p0_called_p1_raised_p0_raised.raise_p;
 
 	  double p0_call_p1_raise_p0_raise_p1_raise_p0_profit = 0.0;
 	  double p0_call_p1_raise_p0_raise_p1_raise_p1_profit = 0.0;
 
 	  { // p0_fold
 	    
-	    double p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p = p0_call_p1_raise_p0_raise_p1_raise_p * p0.strategy.p0_called_p1_raised_p0_raised_p1_raised.fold_p;
+	    double p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p = p0_call_p1_raise_p0_raise_p1_raise_p * p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.fold_p;
 
 	    // P0 has 3.0 in the pot; he wins this; P1 wins it.
 	    double p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit = -3.0;
 	    double p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit = +3.0;
 	    
-	    update_evals(p0.eval.p0_called.p1_raised.p0_raised.p1_raised.p0_folded.eval,
-			 p1.eval.p0_called.p1_raised.p0_raised.p1_raised.p0_folded.eval,
+	    update_evals(p0_eval.p0_called.p1_raised.p0_raised.p1_raised.p0_folded.eval,
+			 p1_eval.p0_called.p1_raised.p0_raised.p1_raised.p0_folded.eval,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit);
@@ -353,15 +354,15 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 	  
 	  { // p0_call
 	    
-	    double p0_call_p1_raise_p0_raise_p1_raise_p0_call_p = p0_call_p1_raise_p0_raise_p1_raise_p * p0.strategy.p0_called_p1_raised_p0_raised_p1_raised.call_p;
+	    double p0_call_p1_raise_p0_raise_p1_raise_p0_call_p = p0_call_p1_raise_p0_raise_p1_raise_p * p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.call_p;
 
 	    // Both players have 4.0 in the pot
 	    auto p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_p1_profit = eval_showdown_profits(winner, 4.0);
 	    double p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit = p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_p1_profit.first;
 	    double p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit = p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_p1_profit.second;
 	    
-	    update_evals(p0.eval.p0_called.p1_raised.p0_raised.p1_raised.p0_called.eval,
-			 p1.eval.p0_called.p1_raised.p0_raised.p1_raised.p0_called.eval,
+	    update_evals(p0_eval.p0_called.p1_raised.p0_raised.p1_raised.p0_called.eval,
+			 p1_eval.p0_called.p1_raised.p0_raised.p1_raised.p0_called.eval,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_call_p,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit);
@@ -371,8 +372,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 	  
 	  } // p0_call
 	  
-	  update_evals(p0.eval.p0_called.p1_raised.p0_raised.p1_raised.eval,
-		       p1.eval.p0_called.p1_raised.p0_raised.p1_raised.eval,
+	  update_evals(p0_eval.p0_called.p1_raised.p0_raised.p1_raised.eval,
+		       p1_eval.p0_called.p1_raised.p0_raised.p1_raised.eval,
 		       p0_call_p1_raise_p0_raise_p1_raise_p,
 		       p0_call_p1_raise_p0_raise_p1_raise_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_raise_p1_profit);
@@ -382,8 +383,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 	  
 	} // p1_raise
 
-	update_evals(p0.eval.p0_called.p1_raised.p0_raised.eval,
-		     p1.eval.p0_called.p1_raised.p0_raised.eval,
+	update_evals(p0_eval.p0_called.p1_raised.p0_raised.eval,
+		     p1_eval.p0_called.p1_raised.p0_raised.eval,
 		     p0_call_p1_raise_p0_raise_p,
 		     p0_call_p1_raise_p0_raise_p0_profit,
 		     p0_call_p1_raise_p0_raise_p1_profit);
@@ -393,8 +394,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 	  
       } // p0_raise
 
-      update_evals(p0.eval.p0_called.p1_raised.eval,
-		   p1.eval.p0_called.p1_raised.eval,
+      update_evals(p0_eval.p0_called.p1_raised.eval,
+		   p1_eval.p0_called.p1_raised.eval,
 		   p0_call_p1_raise_p,
 		   p0_call_p1_raise_p0_profit,
 		   p0_call_p1_raise_p1_profit);
@@ -404,8 +405,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
       
     } // p1_call
     
-    update_evals(p0.eval.p0_called.eval,
-		 p1.eval.p0_called.eval,
+    update_evals(p0_eval.p0_called.eval,
+		 p1_eval.p0_called.eval,
 		 p0_call_p,
 		 p0_call_p0_profit,
 		 p0_call_p1_profit);
@@ -417,20 +418,20 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
   
   // p0_raise
   {
-    double p0_raise_p = p0.strategy.open.raise_p;
+    double p0_raise_p = p0_strategy.open.raise_p;
     double p0_raise_p0_profit = 0.0;
     double p0_raise_p1_profit = 0.0;
 
     { // p1_fold
       
-      double p0_raise_p1_fold_p = p0_raise_p * p1.strategy.p0_raised.fold_p;
+      double p0_raise_p1_fold_p = p0_raise_p * p1_strategy.p0_raised.fold_p;
       
       // P1 folds BB - i.e. 1.0, P0 wins that 1.0
       double p0_raise_p1_fold_p0_profit = +1.0;
       double p0_raise_p1_fold_p1_profit = -1.0;
 								       
-      update_evals(p0.eval.p0_raised.p1_folded.eval,
-		   p1.eval.p0_raised.p1_folded.eval,
+      update_evals(p0_eval.p0_raised.p1_folded.eval,
+		   p1_eval.p0_raised.p1_folded.eval,
 		   p0_raise_p1_fold_p,
 		   p0_raise_p1_fold_p0_profit,
 		   p0_raise_p1_fold_p1_profit);
@@ -442,15 +443,15 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
       
     { // p1_call
       
-      double p0_raise_p1_call_p = p0_raise_p * p1.strategy.p0_raised.call_p;
+      double p0_raise_p1_call_p = p0_raise_p * p1_strategy.p0_raised.call_p;
 
       // Both players have 2.0 in the pot
       auto p0_raise_p1_call_p0_p1_profit = eval_showdown_profits(winner, 2.0);
       double p0_raise_p1_call_p0_profit = p0_raise_p1_call_p0_p1_profit.first;
       double p0_raise_p1_call_p1_profit = p0_raise_p1_call_p0_p1_profit.second;
       
-      update_evals(p0.eval.p0_raised.p1_called.eval,
-		   p1.eval.p0_raised.p1_called.eval,
+      update_evals(p0_eval.p0_raised.p1_called.eval,
+		   p1_eval.p0_raised.p1_called.eval,
 		   p0_raise_p1_call_p,
 		   p0_raise_p1_call_p0_profit,
 		   p0_raise_p1_call_p1_profit);
@@ -462,21 +463,21 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
       
     { // p1_raise
       
-      double p0_raise_p1_raise_p = p0_raise_p * p1.strategy.p0_raised.raise_p;
+      double p0_raise_p1_raise_p = p0_raise_p * p1_strategy.p0_raised.raise_p;
 
       double p0_raise_p1_raise_p0_profit = 0.0;
       double p0_raise_p1_raise_p1_profit = 0.0;
 
       { // p0_fold
 	
-        double p0_raise_p1_raise_p0_fold_p = p0_raise_p1_raise_p * p0.strategy.p0_raised_p1_raised.fold_p;
+        double p0_raise_p1_raise_p0_fold_p = p0_raise_p1_raise_p * p0_strategy.p0_raised_p1_raised.fold_p;
 
 	// P0 loses current bet of 2.0; P1 wins it
 	double p0_raise_p1_raise_p0_fold_p0_profit = -2.0;
 	double p0_raise_p1_raise_p0_fold_p1_profit = +2.0;
 	
-	update_evals(p0.eval.p0_raised.p1_raised.p0_folded.eval,
-		     p1.eval.p0_raised.p1_raised.p0_folded.eval,
+	update_evals(p0_eval.p0_raised.p1_raised.p0_folded.eval,
+		     p1_eval.p0_raised.p1_raised.p0_folded.eval,
 		     p0_raise_p1_raise_p0_fold_p,
 		     p0_raise_p1_raise_p0_fold_p0_profit,
 		     p0_raise_p1_raise_p0_fold_p1_profit);
@@ -488,15 +489,15 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
       { // p0_call
 	
-        double p0_raise_p1_raise_p0_call_p = p0_raise_p1_raise_p * p0.strategy.p0_raised_p1_raised.call_p;
+        double p0_raise_p1_raise_p0_call_p = p0_raise_p1_raise_p * p0_strategy.p0_raised_p1_raised.call_p;
 
 	// Both players have 3.0 in the pot
 	auto p0_raise_p1_raise_p0_call_p0_p1_profit = eval_showdown_profits(winner, 3.0);
 	double p0_raise_p1_raise_p0_call_p0_profit = p0_raise_p1_raise_p0_call_p0_p1_profit.first;
 	double p0_raise_p1_raise_p0_call_p1_profit = p0_raise_p1_raise_p0_call_p0_p1_profit.second;
 	
-	update_evals(p0.eval.p0_raised.p1_raised.p0_called.eval,
-		     p1.eval.p0_raised.p1_raised.p0_called.eval,
+	update_evals(p0_eval.p0_raised.p1_raised.p0_called.eval,
+		     p1_eval.p0_raised.p1_raised.p0_called.eval,
 		     p0_raise_p1_raise_p0_call_p,
 		     p0_raise_p1_raise_p0_call_p0_profit,
 		     p0_raise_p1_raise_p0_call_p1_profit);
@@ -508,21 +509,21 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
       { // p0_raise
 	
-        double p0_raise_p1_raise_p0_raise_p = p0_raise_p1_raise_p * p0.strategy.p0_raised_p1_raised.raise_p;
+        double p0_raise_p1_raise_p0_raise_p = p0_raise_p1_raise_p * p0_strategy.p0_raised_p1_raised.raise_p;
 
 	double p0_raise_p1_raise_p0_raise_p0_profit = 0.0;
 	double p0_raise_p1_raise_p0_raise_p1_profit = 0.0;
 
 	{ // p1_fold
 	  
-	  double p0_raise_p1_raise_p0_raise_p1_fold_p = p0_raise_p1_raise_p0_raise_p * p1.strategy.p0_raised_p1_raised_p0_raised.fold_p;
+	  double p0_raise_p1_raise_p0_raise_p1_fold_p = p0_raise_p1_raise_p0_raise_p * p1_strategy.p0_raised_p1_raised_p0_raised.fold_p;
 
 	  // P1 has 3.0 in the pot; P0 wins this; P1 loses it.
 	  double p0_raise_p1_raise_p0_raise_p1_fold_p0_profit = +3.0;
 	  double p0_raise_p1_raise_p0_raise_p1_fold_p1_profit = -3.0;
 
-	  update_evals(p0.eval.p0_raised.p1_raised.p0_raised.p1_folded.eval,
-		       p1.eval.p0_raised.p1_raised.p0_raised.p1_folded.eval,
+	  update_evals(p0_eval.p0_raised.p1_raised.p0_raised.p1_folded.eval,
+		       p1_eval.p0_raised.p1_raised.p0_raised.p1_folded.eval,
 		       p0_raise_p1_raise_p0_raise_p1_fold_p,
 		       p0_raise_p1_raise_p0_raise_p1_fold_p0_profit,
 		       p0_raise_p1_raise_p0_raise_p1_fold_p1_profit);
@@ -534,15 +535,15 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
 	{ // p1_call
 	  
-	  double p0_raise_p1_raise_p0_raise_p1_call_p = p0_raise_p1_raise_p0_raise_p * p1.strategy.p0_raised_p1_raised_p0_raised.call_p;
+	  double p0_raise_p1_raise_p0_raise_p1_call_p = p0_raise_p1_raise_p0_raise_p * p1_strategy.p0_raised_p1_raised_p0_raised.call_p;
 
 	  // Both players have 4.0 in the pot
 	  auto p0_raise_p1_raise_p0_raise_p1_call_p0_p1_profit = eval_showdown_profits(winner, 4.0);
 	  double p0_raise_p1_raise_p0_raise_p1_call_p0_profit = p0_raise_p1_raise_p0_raise_p1_call_p0_p1_profit.first;
 	  double p0_raise_p1_raise_p0_raise_p1_call_p1_profit = p0_raise_p1_raise_p0_raise_p1_call_p0_p1_profit.second;
 
-	  update_evals(p0.eval.p0_raised.p1_raised.p0_raised.p1_called.eval,
-		       p1.eval.p0_raised.p1_raised.p0_raised.p1_called.eval,
+	  update_evals(p0_eval.p0_raised.p1_raised.p0_raised.p1_called.eval,
+		       p1_eval.p0_raised.p1_raised.p0_raised.p1_called.eval,
 		       p0_raise_p1_raise_p0_raise_p1_call_p,
 		       p0_raise_p1_raise_p0_raise_p1_call_p0_profit,
 		       p0_raise_p1_raise_p0_raise_p1_call_p1_profit);
@@ -552,8 +553,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 	  
 	} // p1_call
 
-	update_evals(p0.eval.p0_raised.p1_raised.p0_raised.eval,
-		     p1.eval.p0_raised.p1_raised.p0_raised.eval,
+	update_evals(p0_eval.p0_raised.p1_raised.p0_raised.eval,
+		     p1_eval.p0_raised.p1_raised.p0_raised.eval,
 		     p0_raise_p1_raise_p0_raise_p,
 		     p0_raise_p1_raise_p0_raise_p0_profit,
 		     p0_raise_p1_raise_p0_raise_p1_profit);
@@ -563,8 +564,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 	  
       } // p0_raise
 
-      update_evals(p0.eval.p0_raised.p1_raised.eval,
-		   p1.eval.p0_raised.p1_raised.eval,
+      update_evals(p0_eval.p0_raised.p1_raised.eval,
+		   p1_eval.p0_raised.p1_raised.eval,
 		   p0_raise_p1_raise_p,
 		   p0_raise_p1_raise_p0_profit,
 		   p0_raise_p1_raise_p1_profit);
@@ -574,8 +575,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
       
     } // p1_raise
       
-    update_evals(p0.eval.p0_raised.eval,
-		 p1.eval.p0_raised.eval,
+    update_evals(p0_eval.p0_raised.eval,
+		 p1_eval.p0_raised.eval,
 		 p0_raise_p,
 		 p0_raise_p0_profit,
 		 p0_raise_p1_profit);
@@ -585,8 +586,8 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
     
   } // p0_raise
   
-  update_evals(p0.eval.eval,
-	       p1.eval.eval,
+  update_evals(p0_eval.eval,
+	       p1_eval.eval,
 	       p,
 	       p0_profit,
 	       p1_profit);
@@ -594,19 +595,76 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 
 static void run_heads_up_preflop_eval() {
   
-  HeadsUpP0PreflopState p0_state_by_norm_hand[2][13][13];
-  HeadsUpP0PreflopState p1_state_by_norm_hand[2][13][13];
 }
 
-static void evaluate_heads_up_preflop_strategies(HeadsUpP0HoleHandStrategy& p0_strategy, HeadsUpP1HoleHandStrategy p1_strategy) {
-  printf("p0_strategy open - fold: %4.3lf call: %4.3lf raise: %4.3lf", p0_strategy.open.fold_p, p0_strategy.open.call_p, p0_strategy.open.raise_p);
+static void dump_fold_call_raise_strategy(const FoldCallRaiseStrategy& strategy) {
+  printf("fold  %.4f call  %.4f raise %.4f", strategy.fold_p, strategy.call_p, strategy.raise_p);
+}
+
+static void dump_fold_call_strategy(const FoldCallStrategy& strategy) {
+  printf("fold  %.4f call  %.4f", strategy.fold_p, strategy.call_p);
+}
+
+static void dump_p0_hand_strategy(int rank1, int rank2, bool suited, const HeadsUpP0HoleHandStrategy& hand_strategy) {
+  printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf("  open:                   "); dump_fold_call_raise_strategy(hand_strategy.open); printf("\n");
+  printf("  call-raise:             "); dump_fold_call_raise_strategy(hand_strategy.p0_called_p1_raised); printf("\n");
+  printf("  call-raise-raise-raise: "); dump_fold_call_strategy(hand_strategy.p0_called_p1_raised_p0_raised_p1_raised); printf("\n");
+  printf("  raise-raise:            "); dump_fold_call_raise_strategy(hand_strategy.p0_raised_p1_raised); printf("\n");
+}
+
+static void dump_p0_strategy(const HeadsUpP0PreflopStrategy& p0_strategy) {
+  // Pocket pairs
+  bool suited = false;
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    int rank1 = rank == Ace ? AceLow : rank;
+
+    dump_p0_hand_strategy(rank1, rank1, suited, p0_strategy.hand_strategies[suited][rank1][rank1]);
+  }
+  
+  printf("\n\n");
+  
+  // Suited
+  suited = true;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+  
+      dump_p0_hand_strategy(rank1, rank2, suited, p0_strategy.hand_strategies[suited][rank1][rank2]);
+    }
+
+    printf("\n");
+  }
+
+  printf("\n\n");
+  
+  // Off-suit
+  suited = false;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+  
+      dump_p0_hand_strategy(rank1, rank2, suited, p0_strategy.hand_strategies[suited][rank1][rank2]);
+    }
+
+    printf("\n");
+  }
+}
+
+static void evaluate_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_strategy, HeadsUpP1PreflopStrategy p1_strategy) {
+  dump_p0_strategy(p0_strategy);
+  //printf("p0_strategy open - fold: %4.3lf call: %4.3lf raise: %4.3lf\n", p0_strategy.open.fold_p, p0_strategy.open.call_p, p0_strategy.open.raise_p);
 }
 
 int main() {
-  HeadsUpP0PreflopStrategy p0_strategies[2][13][13];
-  HeadsUpP0PreflopStrategy p1_strategies[2][13][13];
+  HeadsUpP0PreflopStrategy p0_strategy;
+  HeadsUpP1PreflopStrategy p1_strategy;
 
-  evaluate_heads_up_preflop_strategies(p0_strategies[0][0][0], p1_strategies[0][0][0]);
+  evaluate_heads_up_preflop_strategies(p0_strategy, p1_strategy);
   
   return 0;
 }
