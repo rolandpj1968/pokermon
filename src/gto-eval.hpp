@@ -479,15 +479,15 @@ namespace Poker {
 	N_ACTIVE,
 	ACTIVE_BM,
 	is_active(next_player(PLAYER_NO, N_PLAYERS), ACTIVE_BM),
-	N_TO_CALL,
+	N_TO_CALL-1,
 	next_player(PLAYER_NO, N_PLAYERS),
 	N_RAISES_LEFT,
 	PLAYER_POTS,
 	CURR_MAX_BET,
 	TOTAL_POT
-	> inactive_child_t;
+	> dead_t;
       
-      inactive_child_t _;
+      dead_t _;
     };
     
     // Specialisation for when we're at maximum bet level.
@@ -553,6 +553,7 @@ namespace Poker {
     namespace StaticAsserts {
 
       namespace TwoPlayerZeroRaises {
+	
 	typedef LimitRootHandEval</*N_PLAYERS*/2, /*N_RAISES*/0>::type_t limit_2p_0r_t;
 	
 	// Root node
@@ -635,6 +636,7 @@ namespace Poker {
       } // namespace TwoPlayerZeroRaises
 
       namespace TwoPlayerOneRaise {
+	
 	typedef LimitRootHandEval</*N_PLAYERS*/2, /*N_RAISES*/1>::type_t limit_2p_1r_t;
 	
 	// Root node
@@ -745,6 +747,21 @@ namespace Poker {
 	static_assert(limit_2p_1r_t::call_t::raise_t::fold_t::curr_max_bet == 4);
 	static_assert(limit_2p_1r_t::call_t::raise_t::fold_t::total_pot == 6);
 	
+	// SB calls, BB raises, SB calls
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::is_leaf);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::small_blind == 1);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::big_blind == 2);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::n_players == 2);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::n_active == 2);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::active_bm == 0x3);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::n_to_call == 0);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::player_no == 1);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::n_raises_left == 0);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::player_pots.pots[0] == 4);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::player_pots.pots[1] == 4);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::curr_max_bet == 4);
+	static_assert(limit_2p_1r_t::call_t::raise_t::call_t::total_pot == 8);
+	
 	// SB raises
 	static_assert(!limit_2p_1r_t::raise_t::is_leaf);
 	static_assert(!limit_2p_1r_t::raise_t::can_raise);
@@ -761,7 +778,252 @@ namespace Poker {
 	static_assert(limit_2p_1r_t::raise_t::curr_max_bet == 4);
 	static_assert(limit_2p_1r_t::raise_t::total_pot == 6);
 	
-      } // namespace TwoPlayerZeroRaises
+	// SB raises, BB folds
+	static_assert(limit_2p_1r_t::raise_t::fold_t::is_leaf);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::small_blind == 1);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::big_blind == 2);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::n_players == 2);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::n_active == 1);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::active_bm == 0x1);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::n_to_call == 0);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::player_no == 0);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::n_raises_left == 0);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::player_pots.pots[0] == 4);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::player_pots.pots[1] == 2);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::curr_max_bet == 4);
+	static_assert(limit_2p_1r_t::raise_t::fold_t::total_pot == 6);
+	
+	// SB raises, BB calls
+	static_assert(limit_2p_1r_t::raise_t::call_t::is_leaf);
+	static_assert(limit_2p_1r_t::raise_t::call_t::small_blind == 1);
+	static_assert(limit_2p_1r_t::raise_t::call_t::big_blind == 2);
+	static_assert(limit_2p_1r_t::raise_t::call_t::n_players == 2);
+	static_assert(limit_2p_1r_t::raise_t::call_t::n_active == 2);
+	static_assert(limit_2p_1r_t::raise_t::call_t::active_bm == 0x3);
+	static_assert(limit_2p_1r_t::raise_t::call_t::n_to_call == 0);
+	static_assert(limit_2p_1r_t::raise_t::call_t::player_no == 0);
+	static_assert(limit_2p_1r_t::raise_t::call_t::n_raises_left == 0);
+	static_assert(limit_2p_1r_t::raise_t::call_t::player_pots.pots[0] == 4);
+	static_assert(limit_2p_1r_t::raise_t::call_t::player_pots.pots[1] == 4);
+	static_assert(limit_2p_1r_t::raise_t::call_t::curr_max_bet == 4);
+	static_assert(limit_2p_1r_t::raise_t::call_t::total_pot == 8);
+	
+      } // namespace TwoPlayerOneRaise
+      
+      namespace ThreePlayerZeroRaises {
+	
+	typedef LimitRootHandEval</*N_PLAYERS*/3, /*N_RAISES*/0>::type_t limit_3p_0r_t;
+	
+	// Root node
+	static_assert(!limit_3p_0r_t::is_leaf);
+	static_assert(!limit_3p_0r_t::can_raise);
+	static_assert(limit_3p_0r_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::n_players == 3);
+	static_assert(limit_3p_0r_t::n_active == 3);
+	static_assert(limit_3p_0r_t::active_bm == 0x7);
+	static_assert(limit_3p_0r_t::n_to_call == 3);
+	static_assert(limit_3p_0r_t::player_no == 2); // UTG to bet
+	static_assert(limit_3p_0r_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::player_pots.pots[0] == 1);
+	static_assert(limit_3p_0r_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::player_pots.pots[2] == 0);
+	static_assert(limit_3p_0r_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::total_pot == 3);
+	
+	// UTG folds
+	static_assert(!limit_3p_0r_t::fold_t::is_leaf); // SB and BB left
+	static_assert(!limit_3p_0r_t::fold_t::can_raise);
+	static_assert(limit_3p_0r_t::fold_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::fold_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::fold_t::n_players == 3);
+	static_assert(limit_3p_0r_t::fold_t::n_active == 2);
+	static_assert(limit_3p_0r_t::fold_t::active_bm == 0x3);
+	static_assert(limit_3p_0r_t::fold_t::n_to_call == 2);
+	static_assert(limit_3p_0r_t::fold_t::player_no == 0); // SB to bet
+	static_assert(limit_3p_0r_t::fold_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::fold_t::player_pots.pots[0] == 1);
+	static_assert(limit_3p_0r_t::fold_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::fold_t::player_pots.pots[2] == 0);
+	static_assert(limit_3p_0r_t::fold_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::fold_t::total_pot == 3);
+
+	// UTG folds, SB folds
+	static_assert(limit_3p_0r_t::fold_t::fold_t::is_leaf); // BB left
+	static_assert(limit_3p_0r_t::fold_t::fold_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::n_players == 3);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::n_active == 1);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::active_bm == 0x2);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::n_to_call == 1);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::player_no == 1); // BB to bet
+	static_assert(limit_3p_0r_t::fold_t::fold_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::player_pots.pots[0] == 1);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::player_pots.pots[2] == 0);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::fold_t::fold_t::total_pot == 3);
+
+	// UTG folds, SB calls
+	static_assert(!limit_3p_0r_t::fold_t::call_t::is_leaf); // SB, BB left
+	static_assert(!limit_3p_0r_t::fold_t::call_t::can_raise);
+	static_assert(limit_3p_0r_t::fold_t::call_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::fold_t::call_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::n_players == 3);
+	static_assert(limit_3p_0r_t::fold_t::call_t::n_active == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::active_bm == 0x3);
+	static_assert(limit_3p_0r_t::fold_t::call_t::n_to_call == 1);
+	static_assert(limit_3p_0r_t::fold_t::call_t::player_no == 1); // BB to bet
+	static_assert(limit_3p_0r_t::fold_t::call_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::fold_t::call_t::player_pots.pots[0] == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::player_pots.pots[2] == 0);
+	static_assert(limit_3p_0r_t::fold_t::call_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::total_pot == 4);
+
+	// UTG folds, SB calls, BB calls
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::is_leaf);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::n_players == 3);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::n_active == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::active_bm == 0x3);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::n_to_call == 0);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::player_no == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::player_pots.pots[0] == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::player_pots.pots[2] == 0);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::fold_t::call_t::call_t::total_pot == 4);
+	
+	// UTG calls
+	static_assert(!limit_3p_0r_t::call_t::is_leaf); // all 3 active
+	static_assert(!limit_3p_0r_t::call_t::can_raise);
+	static_assert(limit_3p_0r_t::call_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::call_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::call_t::n_players == 3);
+	static_assert(limit_3p_0r_t::call_t::n_active == 3);
+	static_assert(limit_3p_0r_t::call_t::active_bm == 0x7);
+	static_assert(limit_3p_0r_t::call_t::n_to_call == 2);
+	static_assert(limit_3p_0r_t::call_t::player_no == 0); // SB to bet
+	static_assert(limit_3p_0r_t::call_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::call_t::player_pots.pots[0] == 1);
+	static_assert(limit_3p_0r_t::call_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::call_t::player_pots.pots[2] == 2);
+	static_assert(limit_3p_0r_t::call_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::call_t::total_pot == 5);
+	
+	// UTG calls, SB folds
+	static_assert(!limit_3p_0r_t::call_t::fold_t::is_leaf); // UTG, BB active
+	static_assert(!limit_3p_0r_t::call_t::fold_t::can_raise);
+	static_assert(limit_3p_0r_t::call_t::fold_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::call_t::fold_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::n_players == 3);
+	static_assert(limit_3p_0r_t::call_t::fold_t::n_active == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::active_bm == 0x6);
+	static_assert(limit_3p_0r_t::call_t::fold_t::n_to_call == 1);
+	static_assert(limit_3p_0r_t::call_t::fold_t::player_no == 1); // BB to bet
+	static_assert(limit_3p_0r_t::call_t::fold_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::call_t::fold_t::player_pots.pots[0] == 1);
+	static_assert(limit_3p_0r_t::call_t::fold_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::player_pots.pots[2] == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::total_pot == 5);
+	
+	// UTG calls, SB folds, BB folds
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::is_leaf); // only UTG active
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::small_blind == 1);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::big_blind == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::n_players == 3);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::n_active == 1);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::active_bm == 0x4);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::n_to_call == 0);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::player_no == 2); // UTG to bet
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::n_raises_left == 0);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::player_pots.pots[0] == 1);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::player_pots.pots[1] == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::player_pots.pots[2] == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::curr_max_bet == 2);
+	static_assert(limit_3p_0r_t::call_t::fold_t::fold_t::total_pot == 5);
+	
+      } // namespace ThreePlayerZeroRaises
+      
+      namespace FourPlayerTwoRaises {
+	
+	typedef LimitRootHandEval</*N_PLAYERS*/4, /*N_RAISES*/2>::type_t limit_4p_2r_t;
+	
+	// Root node
+	static_assert(!limit_4p_2r_t::is_leaf);
+	static_assert(limit_4p_2r_t::can_raise);
+	static_assert(limit_4p_2r_t::small_blind == 1);
+	static_assert(limit_4p_2r_t::big_blind == 2);
+	static_assert(limit_4p_2r_t::n_players == 4);
+	static_assert(limit_4p_2r_t::n_active == 4);
+	static_assert(limit_4p_2r_t::active_bm == 0xf);
+	static_assert(limit_4p_2r_t::n_to_call == 4);
+	static_assert(limit_4p_2r_t::player_no == 2); // UTG to bet
+	static_assert(limit_4p_2r_t::n_raises_left == 2);
+	static_assert(limit_4p_2r_t::player_pots.pots[0] == 1);
+	static_assert(limit_4p_2r_t::player_pots.pots[1] == 2);
+	static_assert(limit_4p_2r_t::player_pots.pots[2] == 0);
+	static_assert(limit_4p_2r_t::player_pots.pots[3] == 0);
+	static_assert(limit_4p_2r_t::curr_max_bet == 2);
+	static_assert(limit_4p_2r_t::total_pot == 3);
+
+	// UTG folds, P3 calls, SB calls, BB raises
+	static_assert(!limit_4p_2r_t::fold_t::call_t::call_t::raise_t::is_leaf);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::small_blind == 1);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::big_blind == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_players == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_active == 3);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::active_bm == 0xb);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_to_call == 3);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::player_no == 2); // UTG to bet
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_raises_left == 1);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::player_pots.pots[0] == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::player_pots.pots[1] == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::player_pots.pots[2] == 0);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::player_pots.pots[3] == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::curr_max_bet == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::total_pot == 8);
+
+	// UTG folds, P3 calls, SB calls, BB raises, UTG is dead
+	static_assert(!limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::is_leaf);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::small_blind == 1);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::big_blind == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::n_players == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::n_active == 3);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::active_bm == 0xb);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::n_to_call == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::player_no == 3);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::n_raises_left == 1);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::player_pots.pots[0] == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::player_pots.pots[1] == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::player_pots.pots[2] == 0);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::player_pots.pots[3] == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::curr_max_bet == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::total_pot == 8);
+
+	// UTG folds, P3 calls, SB calls, BB raises, UTG is dead, P3 raises, SB folds
+	static_assert(!limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::is_leaf);
+	static_assert(!limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::can_raise);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::small_blind == 1);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::big_blind == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::n_players == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::n_active == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::active_bm == 0xa);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::n_to_call == 1);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_no == 1);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::n_raises_left == 0);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[0] == 2);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[1] == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[2] == 0);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[3] == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::curr_max_bet == 4);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::total_pot == 10);
+	
+      } // namespace FourPlayerTwoRaises
       
     } // namespace StaticAsserts
     
