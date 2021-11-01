@@ -193,6 +193,415 @@ struct HeadsUpNodeEval {
   double p1_profit;
 };
 
+template <int N_PLAYERS>
+struct NodeEvalPerPlayerProfit {
+  double profits[N_PLAYERS];
+};
+
+template <int N_PLAYERS>
+struct NodeEval {
+  // Sum over all hands evaluated of per-hand 'probability of reaching this node'.
+  double activity;
+  // Sum over all hands of per-hand (product of) 'probability of reaching this node' times 'player outcome for the hand'.
+  NodeEvalPerPlayerProfit<N_PLAYERS> player_profits;
+};
+
+template <int N_PLAYERS>
+struct PlayerPots {
+  int pots[N_PLAYERS];
+};
+
+constexpr int player_pot_u64_shift(int player_no) {
+  return player_no * 8/*bits*/;
+}
+
+static const u64 U8_MASK = 0xff;
+
+constexpr u64 player_pot_u64_mask(int player_no) {
+  return U8_MASK << player_pot_u64_shift(player_no);
+}
+
+constexpr int get_player_pot(int player_no, u64 player_pots_u64) {
+  return (player_pots_u64 & player_pot_u64_mask(player_no)) >> player_pot_u64_shift(player_no);
+}
+
+constexpr u64 update_player_pots(int player_no, int player_pot, u64 player_pots_u64) {
+  return
+    (player_pots_u64 & ~player_pot_u64_mask(player_no))
+    | ((u64)player_no << player_pot_u64_shift(player_no));
+    
+}
+
+template <int N_PLAYERS>
+constexpr PlayerPots<N_PLAYERS> make_player_pots(u64 player_pots_u64) {
+  PlayerPots<N_PLAYERS> player_pots();
+
+  for(int n = 0; n < N_PLAYERS; n++) {
+    player_pots[n] = get_player_pot(n, player_pots_u64);
+  }
+
+  return player_pots;
+}
+
+constexpr int next_player(int player_no, int n_players) {
+  return (player_no+1) % n_players;
+}
+
+constexpr int player_bet(int player_no, u64 player_pots_u64, int target_bet) {
+  return target_bet - get_player_pot(player_no, player_pots_u64);
+}
+
+constexpr u8 active_bm_u8_mask(int player_no) {
+  return (u8) (1 << player_no);
+}
+
+constexpr bool is_active(int player_no, u8 active_bm) {
+  return (active_bm & active_bm_u8_mask(player_no)) != 0;
+}
+
+constexpr u8 remove_player_from_active_bm(int player_no, u8 active_bm) {
+  return active_bm & ~active_bm_u8_mask(player_no);
+}
+
+template <
+  // Small blind
+  int SMALL_BLIND,
+  // Big blind - also raise amount
+  int BIG_BLIND,
+  // How many players are playing
+  int N_PLAYERS,
+  // How many players are still active - i.e. have _not_ folded.
+  // When this reaches 1 then that player takes the pot cos
+  //   everyone else has folded.
+  int N_ACTIVE,
+  // Bitmap of active players.
+  u8 ACTIVE_BM,
+  // Is the current player active?
+  bool IS_ACTIVE,
+  // How many _active_ players left until everyone has called.
+  // When this is zero then the round of betting is over and
+  //   goes to showdown or next stage.
+  int N_TO_CALL,
+  // The player currently betting.
+  // Small blind (SB) is player 0, big blind (BB) is player 1.
+  // For hole card betting we start at player 2 (or SB if heads up).
+  int PLAYER_NO,
+  // How many raises can still be made. Typically limit poker allows
+  //   a maximum bet total per player of 4 x BB, which means that at
+  //   the start of a betting round there are 3 raises still allowed.
+  int N_RAISES_LEFT,
+  // The current bet amount of all players, stuffed into a u64, with
+  //   one byte per player - giving a max bet of 255 per player and
+  //   a max of 8 players. This is enough for limit holdem.
+  u64 PLAYER_POTS,
+  // The current highest bet - this increases at every raise.
+  int MAX_BET,
+  // Current total pot
+  int TOTAL_POT
+  >
+struct LimitHandEvalConsts {
+  static const int small_blind = SMALL_BLIND;
+  static const int big_blind = BIG_BLIND;
+  static const int n_players = N_PLAYERS;
+  static const int n_active = N_ACTIVE;
+  static const u8 active_bm = ACTIVE_BM;
+  static const bool is_active = IS_ACTIVE;
+  static const int n_to_call = N_TO_CALL;
+  static const int player_no = PLAYER_NO;
+  static const int n_raises_left = N_RAISES_LEFT;
+  static const PlayerPots<N_PLAYERS> player_pots = make_player_pots<N_PLAYERS>(PLAYER_POTS);
+  static const int max_bet = MAX_BET;
+  static const int total_pot = TOTAL_POT;
+};
+
+// Declaration of LimitHandEval.
+template <
+  // Small blind
+  int SMALL_BLIND,
+  // Big blind - also raise amount
+  int BIG_BLIND,
+  // How many players are playing
+  int N_PLAYERS,
+  // How many players are still active - i.e. have _not_ folded.
+  // When this reaches 1 then that player takes the pot cos
+  //   everyone else has folded.
+  int N_ACTIVE,
+  // Bitmap of active players.
+  u8 ACTIVE_BM,
+  // Is the current player active?
+  bool IS_ACTIVE,
+  // How many _active_ players left until everyone has called.
+  // When this is zero then the round of betting is over and
+  //   goes to showdown or next stage.
+  int N_TO_CALL,
+  // The player currently betting.
+  // Small blind (SB) is player 0, big blind (BB) is player 1.
+  // For hole card betting we start at player 2 (or SB if heads up).
+  int PLAYER_NO,
+  // How many raises can still be made. Typically limit poker allows
+  //   a maximum bet total per player of 4 x BB, which means that at
+  //   the start of a betting round there are 3 raises still allowed.
+  int N_RAISES_LEFT,
+  // The current bet amount of all players, stuffed into a u64, with
+  //   one byte per player - giving a max bet of 255 per player and
+  //   a max of 8 players. This is enough for limit holdem.
+  u64 PLAYER_POTS,
+  // The current highest bet - this increases at every raise.
+  int MAX_BET,
+  // Current total pot
+  int TOTAL_POT
+  >
+struct LimitHandEval;
+
+// Child node of this eval tree node for current player folding
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  int N_ACTIVE,
+  u8 ACTIVE_BM,
+  bool IS_ACTIVE,
+  int N_TO_CALL,
+  int PLAYER_NO,
+  int N_RAISES_LEFT,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEvalFoldChild :
+  LimitHandEval<
+    SMALL_BLIND,
+    BIG_BLIND,
+    N_PLAYERS,
+    N_ACTIVE-1,
+    remove_player_from_active_bm(PLAYER_NO, ACTIVE_BM),
+    is_active(next_player(PLAYER_NO, N_PLAYERS), ACTIVE_BM),
+    N_TO_CALL-1,
+    next_player(PLAYER_NO, N_PLAYERS),
+    N_RAISES_LEFT,
+    PLAYER_POTS,
+    MAX_BET,
+    TOTAL_POT
+  >
+{};
+
+// Child node of this eval tree node for current player calling (or checking).
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  int N_ACTIVE,
+  u8 ACTIVE_BM,
+  bool IS_ACTIVE,
+  int N_TO_CALL,
+  int PLAYER_NO,
+  int N_RAISES_LEFT,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEvalCallChild :
+  LimitHandEval<
+    SMALL_BLIND,
+    BIG_BLIND,
+    N_PLAYERS,
+    N_ACTIVE,
+    ACTIVE_BM,
+    is_active(next_player(PLAYER_NO, N_PLAYERS), ACTIVE_BM),
+    N_TO_CALL-1,
+    next_player(PLAYER_NO, N_PLAYERS),
+    N_RAISES_LEFT,
+    update_player_pots(PLAYER_NO, MAX_BET, PLAYER_POTS),
+    MAX_BET,
+    TOTAL_POT + player_bet(PLAYER_NO, PLAYER_POTS, MAX_BET)
+  >
+{};
+
+// Child node of this eval tree node for current player raising.
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  int N_ACTIVE,
+  u8 ACTIVE_BM,
+  bool IS_ACTIVE,
+  int N_TO_CALL,
+  int PLAYER_NO,
+  int N_RAISES_LEFT,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEvalRaiseChild :
+  LimitHandEval<
+    SMALL_BLIND,
+    BIG_BLIND,
+    N_PLAYERS,
+    N_ACTIVE,
+    ACTIVE_BM,
+    is_active(next_player(PLAYER_NO, N_PLAYERS), ACTIVE_BM),
+    N_TO_CALL-1,
+    next_player(PLAYER_NO, N_PLAYERS),
+    N_RAISES_LEFT-1,
+    update_player_pots(PLAYER_NO, MAX_BET + BIG_BLIND, PLAYER_POTS),
+    MAX_BET + BIG_BLIND,
+    TOTAL_POT + player_bet(PLAYER_NO, PLAYER_POTS, MAX_BET + BIG_BLIND)
+  >
+{};
+
+// Default definition of LimitHandEval.
+//   The current active player can fold, call or raise.
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  int N_ACTIVE,
+  u8 ACTIVE_BM,
+  bool IS_ACTIVE,
+  int N_TO_CALL,
+  int PLAYER_NO,
+  int N_RAISES_LEFT,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEval :
+  LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>,
+  LimitHandEvalFoldChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>,
+  LimitHandEvalCallChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>,
+  LimitHandEvalRaiseChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>
+{
+  NodeEval<N_PLAYERS> eval;
+};
+
+// Specialisation for one player left in the hand.
+// This is the highest priority specialisation since the hand is over
+//   immediately - there are no children.
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  u8 ACTIVE_BM,
+  bool IS_ACTIVE,
+  int N_TO_CALL,
+  int PLAYER_NO,
+  int N_RAISES_LEFT,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEval<SMALL_BLIND, BIG_BLIND, N_PLAYERS, /*N_ACTIVE*/1, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>
+  : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, /*N_ACTIVE*/1, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>
+{
+  NodeEval<N_PLAYERS> eval;
+};
+
+// Specialisation for all active players called.
+// Betting is now over and we go to showdown or the next stage.
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  int N_ACTIVE,
+  u8 ACTIVE_BM,
+  bool IS_ACTIVE,
+  int PLAYER_NO,
+  int N_RAISES_LEFT,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEval<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, /*N_TO_CALL*/0, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>
+  : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, /*N_TO_CALL*/0, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>
+{
+  NodeEval<N_PLAYERS> eval;
+};
+
+// Specialisation for current player already folded
+// This is just a dummy node but it is more comprehensible to include '_' for inactive players.
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  int N_ACTIVE,
+  u8 ACTIVE_BM,
+  int N_TO_CALL,
+  int PLAYER_NO,
+  int N_RAISES_LEFT,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEval<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, /*IS_ACTIVE*/false, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>
+  : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, /*IS_ACTIVE*/false, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, MAX_BET, TOTAL_POT>
+{
+  typedef LimitHandEval<
+    SMALL_BLIND,
+    BIG_BLIND,
+    N_PLAYERS,
+    N_ACTIVE,
+    ACTIVE_BM,
+    is_active(next_player(PLAYER_NO, N_PLAYERS), ACTIVE_BM),
+    N_TO_CALL,
+    next_player(PLAYER_NO, N_PLAYERS),
+    N_RAISES_LEFT,
+    PLAYER_POTS,
+    MAX_BET,
+    TOTAL_POT
+    > inactive_child_t;
+
+  inactive_child_t _;
+};
+
+// Specialisation for when we're at maximum bet level.
+// This is lowest priority specialisation since terminal conditions should be considered first.
+// Only fold or call (check) is allowed now.
+template <
+  int SMALL_BLIND,
+  int BIG_BLIND,
+  int N_PLAYERS,
+  int N_ACTIVE,
+  u8 ACTIVE_BM,
+  bool IS_ACTIVE,
+  int N_TO_CALL,
+  int PLAYER_NO,
+  u64 PLAYER_POTS,
+  int MAX_BET,
+  int TOTAL_POT
+  >
+struct LimitHandEval<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, /*N_RAISES_LEFT*/0, PLAYER_POTS, MAX_BET, TOTAL_POT> :
+  LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, /*N_RAISES_LEFT*/0, PLAYER_POTS, MAX_BET, TOTAL_POT>,
+  LimitHandEvalFoldChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, /*N_RAISES_LEFT*/0, PLAYER_POTS, MAX_BET, TOTAL_POT>,
+  LimitHandEvalCallChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, N_ACTIVE, ACTIVE_BM, IS_ACTIVE, N_TO_CALL, PLAYER_NO, /*N_RAISES_LEFT*/0, PLAYER_POTS, MAX_BET, TOTAL_POT>
+{
+  NodeEval<N_PLAYERS> eval;
+};
+
+template <int N_RAISES_LEFT, int PLAYER_NO, int N_PLAYERS>
+struct TwoPlayerHoleHandEval {
+  static const int player_no = PLAYER_NO;
+
+  HeadsUpNodeEval eval;
+  
+  struct { HeadsUpNodeEval eval; } fold;
+  
+  struct { HeadsUpNodeEval eval; } call;
+
+  TwoPlayerHoleHandEval<N_RAISES_LEFT-1, (PLAYER_NO+1)%N_PLAYERS, N_PLAYERS> raise;
+};
+
+// Only call and fold at maximum bet.
+template <int PLAYER_NO, int N_PLAYERS>
+struct TwoPlayerHoleHandEval<0, PLAYER_NO, N_PLAYERS> {
+  static const int player_no = PLAYER_NO;
+
+  HeadsUpNodeEval eval;
+  
+  struct { HeadsUpNodeEval eval; } fold;
+  
+  struct { HeadsUpNodeEval eval; } call;
+};
+
 struct HeadsUpPlayerHoleHandEval {
   HeadsUpNodeEval eval;
 
@@ -839,20 +1248,23 @@ static void dump_p1_strategy(const HeadsUpP1PreflopStrategy& p1_strategy) {
   }
 }
 
-static void dump_hand_eval(int rank1, int rank2, bool suited, const HeadsUpPlayerHoleHandEval& hand_eval) {
-  if(hand_eval.eval.activity != 0.0) {
+static void dump_hand_eval(int rank1, int rank2, bool suited, const HeadsUpPlayerHoleHandEval& hand_eval, double& total_activity, double& total_p0_profit, double& total_p1_profit) {
   printf("%c%c%c", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf(" activity: %11.4lf p0 %11.4lf p1 %11.4lf rel-p0 %6.4lf rel-p1 %6.4lf\n", hand_eval.eval.activity, hand_eval.eval.p0_profit, hand_eval.eval.p1_profit, hand_eval.eval.p0_profit/hand_eval.eval.activity, hand_eval.eval.p1_profit/hand_eval.eval.activity);
-  }
+
+  total_activity += hand_eval.eval.activity;
+  total_p0_profit += hand_eval.eval.p0_profit;
+  total_p1_profit += hand_eval.eval.p1_profit;
 }
 
 static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
+  double total_activity = 0.0, total_p0_profit = 0.0, total_p1_profit = 0.0;
+  
   // Pocket pairs
   bool suited = false;
   for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
     int rank1 = rank == Ace ? AceLow : rank;
-
-    dump_hand_eval(rank1, rank1, suited, eval.hand_evals[suited][rank1][rank1]);
+    dump_hand_eval(rank1, rank1, suited, eval.hand_evals[suited][rank1][rank1], total_activity, total_p0_profit, total_p1_profit);
   }
   
   printf("\n\n");
@@ -865,7 +1277,7 @@ static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
     for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
       int rank2 = rank_lo == Ace ? 0 : rank_lo;
   
-      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2]);
+      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2], total_activity, total_p0_profit, total_p1_profit);
     }
 
     printf("\n");
@@ -881,11 +1293,12 @@ static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
     for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
       int rank2 = rank_lo == Ace ? 0 : rank_lo;
   
-      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2]);
+      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2], total_activity, total_p0_profit, total_p1_profit);
     }
 
     printf("\n");
   }
+  printf("\nOverall outcome: %11.4lf p0 %11.4lf p1 %11.4lf p0-EV %6.4lf p1-EV %6.4lf\n", total_activity, total_p0_profit, total_p1_profit, total_p0_profit/total_activity, total_p1_profit/total_activity);
 }
 
 static double rel_p0_profit(const HeadsUpNodeEval& eval) {
@@ -986,7 +1399,16 @@ static void adjust_p0_strategy(HeadsUpP0PreflopStrategy& p0_strategy, const Head
     
     for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
       int rank2 = rank_lo == Ace ? 0 : rank_lo;
-  
+
+      if(rank_hi == Three && rank_lo == Two) {
+	printf("\n--------------> P0 32o analysis:\n");
+	const HeadsUpPlayerHoleHandEval& hand_eval = p0_eval.hand_evals[suited][rank1][rank2];
+        printf("          open:");
+        printf("\n            p0-fold  "); dump_eval(hand_eval.p0_folded.eval);
+        printf("\n            p0-call  "); dump_eval(hand_eval.p0_called.eval);
+        printf("\n            p0-raise "); dump_eval(hand_eval.p0_raised.eval);
+        printf("\n");
+      }
       adjust_p0_hand_strategy(p0_strategy.hand_strategies[suited][rank1][rank2], p0_eval.hand_evals[suited][rank1][rank2], leeway);
     }
   }
@@ -1035,12 +1457,12 @@ static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrat
     dump_p1_strategy(p1_strategy);
   }
 
-  HeadsUpPlayerPreflopEval* ptr_p0_eval = new HeadsUpPlayerPreflopEval;
-  HeadsUpPlayerPreflopEval* ptr_p1_eval = new HeadsUpPlayerPreflopEval;
+  HeadsUpPlayerPreflopEval* ptr_p0_eval = new HeadsUpPlayerPreflopEval();
+  HeadsUpPlayerPreflopEval* ptr_p1_eval = new HeadsUpPlayerPreflopEval();
   HeadsUpPlayerPreflopEval& p0_eval = *ptr_p0_eval;
   HeadsUpPlayerPreflopEval& p1_eval = *ptr_p1_eval;
 
-  if(true) {
+  if(false) {
     // What is the initial state
     printf("Player 0 - Small Blind - initial state - should be all 0.0\n\n");
     dump_player_eval(p0_eval);
@@ -1177,17 +1599,17 @@ static void converge_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_st
 }
 
 int main() {
-  int N_ROUNDS = 1000;
+  int N_ROUNDS = 2000;
   int N_DEALS = 10608/*52*51*4*/;
-  int N_DEALS_INC = 10608/*52*51*4*/;
+  int N_DEALS_INC = 10608/*52*51*4*/ / 4;
   double leeway = 0.1;
-  double leeway_inc = 0.1;
+  double leeway_inc = 0.025;
   
   std::seed_seq seed{1, 2, 3, 4, 6};
   Dealer::DealerT dealer(seed);
   
-  HeadsUpP0PreflopStrategy* p0_strategy = new HeadsUpP0PreflopStrategy;
-  HeadsUpP1PreflopStrategy* p1_strategy = new HeadsUpP1PreflopStrategy;
+  HeadsUpP0PreflopStrategy* p0_strategy = new HeadsUpP0PreflopStrategy();
+  HeadsUpP1PreflopStrategy* p1_strategy = new HeadsUpP1PreflopStrategy();
 
   converge_heads_up_preflop_strategies(*p0_strategy, *p1_strategy, dealer, N_ROUNDS, N_DEALS, N_DEALS_INC, leeway, leeway_inc);
 
