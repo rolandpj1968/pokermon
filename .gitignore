@@ -1,0 +1,9 @@
+*~
+*.o
+*.s
+*.out
+*.log
+obj/
+skaak
+perft
+src/tools/gen-pawn-attackers
