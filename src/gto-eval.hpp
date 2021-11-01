@@ -363,7 +363,7 @@ namespace Poker {
 	N_ACTIVE,
 	ACTIVE_BM,
 	is_active(next_player(PLAYER_NO, N_PLAYERS), ACTIVE_BM),
-	/*N_TO_CALL*/N_PLAYERS-1, // Since we raised, we go all the way round the table again...
+	/*N_TO_CALL*/N_ACTIVE-1, // Since we raised, we go all the way round the table again...
 	next_player(PLAYER_NO, N_PLAYERS),
 	N_RAISES_LEFT-1,
 	update_player_pots(PLAYER_NO, CURR_MAX_BET + BIG_BLIND, PLAYER_POTS),
@@ -479,7 +479,7 @@ namespace Poker {
 	N_ACTIVE,
 	ACTIVE_BM,
 	is_active(next_player(PLAYER_NO, N_PLAYERS), ACTIVE_BM),
-	N_TO_CALL-1,
+	N_TO_CALL,
 	next_player(PLAYER_NO, N_PLAYERS),
 	N_RAISES_LEFT,
 	PLAYER_POTS,
@@ -978,7 +978,7 @@ namespace Poker {
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_players == 4);
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_active == 3);
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::active_bm == 0xb);
-	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_to_call == 3);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_to_call == 2);
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::player_no == 2); // UTG to bet
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::n_raises_left == 1);
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::player_pots.pots[0] == 2);
@@ -1019,9 +1019,9 @@ namespace Poker {
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[0] == 2);
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[1] == 4);
 	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[2] == 0);
-	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[3] == 4);
-	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::curr_max_bet == 4);
-	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::total_pot == 10);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::player_pots.pots[3] == 6);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::curr_max_bet == 6);
+	static_assert(limit_4p_2r_t::fold_t::call_t::call_t::raise_t::dead_t::raise_t::fold_t::total_pot == 12);
 	
       } // namespace FourPlayerTwoRaises
       
