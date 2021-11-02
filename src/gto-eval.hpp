@@ -66,6 +66,16 @@ namespace Poker {
       
       return player_pots;
     }
+
+    constexpr inline int get_curr_max_bet(int n_players, u64 player_pots_u64) {
+      int curr_max_bet = -1;
+      
+      for(int n = 0; n < n_players; n++) {
+	curr_max_bet = std::max(curr_max_bet, get_player_pot(n, player_pots_u64));
+      }
+      
+      return curr_max_bet;
+    }
     
     constexpr inline int next_player(int player_no, int n_players) {
       return (player_no+1) % n_players;
@@ -115,9 +125,7 @@ namespace Poker {
       // The current bet amount of all players, stuffed into a u64, with
       //   one byte per player - giving a max bet of 255 per player and
       //   a max of 8 players. This is enough for limit holdem.
-      u64 PLAYER_POTS,
-      // The current highest bet - this increases at every raise.
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
     struct LimitHandEvalConsts {
       static constexpr int small_blind = SMALL_BLIND;
@@ -130,7 +138,7 @@ namespace Poker {
       static constexpr int player_no = PLAYER_NO;
       static constexpr int n_raises_left = N_RAISES_LEFT;
       static constexpr PlayerPots<N_PLAYERS> player_pots = make_player_pots<N_PLAYERS>(PLAYER_POTS);
-      static constexpr int curr_max_bet = CURR_MAX_BET;
+      static constexpr int curr_max_bet = get_curr_max_bet(N_PLAYERS, PLAYER_POTS);
       static constexpr int total_pot = player_pots.get_total_pot();
     };
     
@@ -159,9 +167,7 @@ namespace Poker {
       // The current bet amount of all players, stuffed into a u64, with
       //   one byte per player - giving a max bet of 255 per player and
       //   a max of 8 players. This is enough for limit holdem.
-      u64 PLAYER_POTS,
-      // The current highest bet - this increases at every raise.
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
     struct LimitHandEval;
 
@@ -222,8 +228,6 @@ namespace Poker {
       //   one byte per player - giving a max bet of 255 per player and
       //   a max of 8 players. This is enough for limit holdem.
       u64 PLAYER_POTS,
-      // The current highest bet - this increases at every raise.
-      int CURR_MAX_BET,
       // Specialised node type
       LimitHandEvalNodeType NODE_TYPE
       >
@@ -238,8 +242,7 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
     struct LimitHandEval :
       LimitHandEvalSpecialised<
@@ -251,7 +254,6 @@ namespace Poker {
         PLAYER_NO,
         N_RAISES_LEFT,
         PLAYER_POTS,
-        CURR_MAX_BET,
         get_node_type(PLAYER_NO, ACTIVE_BM, N_TO_CALL, N_RAISES_LEFT)
       >
     {};
@@ -265,8 +267,7 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
     struct LimitHandEvalFoldChild {
       typedef LimitHandEval<
@@ -277,8 +278,7 @@ namespace Poker {
 	N_TO_CALL-1,
 	next_player(PLAYER_NO, N_PLAYERS),
 	N_RAISES_LEFT,
-	PLAYER_POTS,
-	CURR_MAX_BET
+	PLAYER_POTS
 	> fold_t;
       
       fold_t fold;
@@ -293,8 +293,7 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
     struct LimitHandEvalCallChild {
       typedef LimitHandEval<
@@ -305,8 +304,7 @@ namespace Poker {
 	N_TO_CALL-1,
 	next_player(PLAYER_NO, N_PLAYERS),
 	N_RAISES_LEFT,
-	update_player_pots(PLAYER_NO, CURR_MAX_BET, PLAYER_POTS),
-	CURR_MAX_BET
+	update_player_pots(PLAYER_NO, get_curr_max_bet(N_PLAYERS, PLAYER_POTS), PLAYER_POTS)
 	> call_t;
       
       call_t call;
@@ -321,8 +319,7 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
     struct LimitHandEvalRaiseChild {
       typedef LimitHandEval<
@@ -333,8 +330,7 @@ namespace Poker {
 	/*N_TO_CALL*/get_n_active(ACTIVE_BM)-1, // Since we raised, we go all the way round the table again...
 	next_player(PLAYER_NO, N_PLAYERS),
 	N_RAISES_LEFT-1,
-	update_player_pots(PLAYER_NO, CURR_MAX_BET + BIG_BLIND, PLAYER_POTS),
-	CURR_MAX_BET + BIG_BLIND
+	update_player_pots(PLAYER_NO, get_curr_max_bet(N_PLAYERS, PLAYER_POTS) + BIG_BLIND, PLAYER_POTS)
 	> raise_t;
       
       raise_t raise;
@@ -350,14 +346,13 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
-    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET, FoldCallRaiseNodeType> :
-      LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>,
-      LimitHandEvalFoldChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>,
-      LimitHandEvalCallChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>,
-      LimitHandEvalRaiseChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>
+    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, FoldCallRaiseNodeType> :
+      LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>,
+      LimitHandEvalFoldChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>,
+      LimitHandEvalCallChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>,
+      LimitHandEvalRaiseChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>
     {
       static const bool is_leaf = false;
       static const bool can_raise = true;
@@ -376,11 +371,10 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
-    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET, AllButOneFoldNodeType>
-      : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>
+    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, AllButOneFoldNodeType>
+      : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>
     {
       static const bool is_leaf = true;
       
@@ -397,11 +391,10 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
-    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET, ShowdownNodeType>
-      : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>
+    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, ShowdownNodeType>
+      : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>
     {
       static const bool is_leaf = true;
       
@@ -418,11 +411,10 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
-    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET, AlreadyFoldedNodeType>
-      : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>
+    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, AlreadyFoldedNodeType>
+      : LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>
     {
       static const bool is_leaf = false;
       
@@ -434,8 +426,7 @@ namespace Poker {
 	N_TO_CALL,
 	next_player(PLAYER_NO, N_PLAYERS),
 	N_RAISES_LEFT,
-	PLAYER_POTS,
-	CURR_MAX_BET
+	PLAYER_POTS
 	> dead_t;
       
       dead_t _;
@@ -452,13 +443,12 @@ namespace Poker {
       int N_TO_CALL,
       int PLAYER_NO,
       int N_RAISES_LEFT,
-      u64 PLAYER_POTS,
-      int CURR_MAX_BET
+      u64 PLAYER_POTS
       >
-    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET, FoldCallNodeType> :
-      LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>,
-      LimitHandEvalFoldChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>,
-      LimitHandEvalCallChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, CURR_MAX_BET>
+    struct LimitHandEvalSpecialised<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS, FoldCallNodeType> :
+      LimitHandEvalConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>,
+      LimitHandEvalFoldChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>,
+      LimitHandEvalCallChild<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>
     {
       static const bool is_leaf = false;
       static const bool can_raise = false;
@@ -489,8 +479,7 @@ namespace Poker {
 	/*N_TO_CALL*/N_PLAYERS,     // Note BB is allowed to still raise
 	/*PLAYER_NO*/2 % N_PLAYERS,
 	/*N_RAISES_LEFT*/N_RAISES,
-	/*PLAYER_POTS*/make_root_player_pots(SMALL_BLIND, BIG_BLIND),
-	/*CURR_MAX_BET*/BIG_BLIND
+	/*PLAYER_POTS*/make_root_player_pots(SMALL_BLIND, BIG_BLIND)
 	> type_t;
     };
 
