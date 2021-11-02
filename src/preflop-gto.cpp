@@ -3,6 +3,7 @@
 
 #include "dealer.hpp"
 #include "gto-eval.hpp"
+#include "gto-strategy.hpp"
 #include "hand-eval.hpp"
 #include "normal.hpp"
 #include "types.hpp"
