@@ -193,6 +193,32 @@ namespace Poker {
       static const bool can_raise = true;
       
       NodeEval<N_PLAYERS> eval;
+
+      template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
+	
+	auto currPlayerStrategy = PerPlayerStrategyListT::get<PLAYER_NO>(playerStrategies);
+
+	auto foldStrategies = playerStrategies.fold();
+	double fold_p = currPlayerStrategy.fold_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = this.fold.evaluate(node_prob*fold_p, foldStrategies, playerHands);
+	player_profits.accumulate(fold_p, fold_profits);
+
+	auto callStrategies = playerStrategies.call();
+	double call_p = currPlayerStrategy.call_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = this.call.evaluate(node_prob*call_p, callStrategies, playerHands);
+	player_profits.accumulate(call_p, call_profits);
+
+	auto raiseStrategies = playerStrategies.raise();
+	double raise_p = currPlayerStrategy.raise_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> raise_profits = this.raise.evaluate(node_prob*raise_p, raiseStrategies, playerHands);
+	player_profits.accumulate(raise_p, raise_profits);
+
+	eval.accumulate(node_prob, player_profits);
+
+	return player_profits;
+      }
     };
     
     // Specialisation for one player left in the hand.
@@ -214,6 +240,17 @@ namespace Poker {
       static const bool is_leaf = true;
       
       NodeEval<N_PLAYERS> eval;
+
+      template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+	// The single player remaining takes the pot.
+	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = make_player_profits_for_one_winner<N_PLAYERS>(ACTIVE_BM, PLAYER_POTS);
+	
+	eval.accumulate(node_prob, player_profits);
+
+	return player_profits;
+      }
+      
     };
     
     // Specialisation for all active players called.
@@ -234,6 +271,7 @@ namespace Poker {
       static const bool is_leaf = true;
       
       NodeEval<N_PLAYERS> eval;
+
     };
     
     // Specialisation for current player already folded
@@ -265,6 +303,14 @@ namespace Poker {
 	> dead_t;
       
       dead_t _;
+
+      template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+	// Skip this node - it's just a dummy.
+	auto deadStrategies = playerStrategies.dead();
+	return this._.evaluate(node_prob, deadStrategies, playerHands);
+      }
+    
     };
     
     // Specialisation for when we're at maximum bet level.
@@ -289,6 +335,27 @@ namespace Poker {
       static const bool can_raise = false;
       
       NodeEval<N_PLAYERS> eval;
+
+      template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
+	
+	auto currPlayerStrategy = PerPlayerStrategyListT::get<PLAYER_NO>(playerStrategies);
+
+	auto foldStrategies = playerStrategies.fold();
+	double fold_p = currPlayerStrategy.fold_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = this.fold.evaluate(node_prob*fold_p, foldStrategies, playerHands);
+	player_profits.accumulate(fold_p, fold_profits);
+
+	auto callStrategies = playerStrategies.call();
+	double call_p = currPlayerStrategy.call_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = this.call.evaluate(node_prob*call_p, callStrategies, playerHands);
+	player_profits.accumulate(call_p, call_profits);
+
+	eval.accumulate(node_prob, player_profits);
+
+	return player_profits;
+      }
     };
     
     template <

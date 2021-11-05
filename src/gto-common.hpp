@@ -82,12 +82,12 @@ namespace Poker {
       return (u8) (1 << player_no);
     }
     
-    constexpr inline bool get_is_active(int player_no, u8 active_bm) {
-      return (active_bm & active_bm_u8_mask(player_no)) != 0;
+    constexpr inline bool get_is_active(int player_no, u8 active_bm_u8) {
+      return (active_bm_u8 & active_bm_u8_mask(player_no)) != 0;
     }
     
-    constexpr inline u8 remove_player_from_active_bm(int player_no, u8 active_bm) {
-      return active_bm & ~active_bm_u8_mask(player_no);
+    constexpr inline u8 remove_player_from_active_bm(int player_no, u8 active_bm_u8) {
+      return active_bm_u8 & ~active_bm_u8_mask(player_no);
     }
     
     constexpr inline int get_n_active(u8 active_bm_u8) {
@@ -132,7 +132,33 @@ namespace Poker {
     template <int N_PLAYERS>
     struct NodeEvalPerPlayerProfit {
       double profits[N_PLAYERS];
+
+      inline void accumulate(double hand_activity, const NodeEvalPerPlayerProfit<N_PLAYERS> hand_profits) {
+	for(int i = 0; i < N_PLAYERS; i++) {
+	  profits[i] += hand_profits.profits[i];
+	}
+      }
+      
     };
+
+    // Only valid if active_bm_u8 has only a single bit set
+    template <int N_PLAYERS>
+    constexpr inline NodeEvalPerPlayerProfit<N_PLAYERS> make_player_profits_for_one_winner(u8 active_bm_u8, u64 player_pots_u64) {
+      PlayerPots<N_PLAYERS> player_pots = make_player_pots<N_PLAYERS>(player_pots_u64);
+      int total_pot = player_pots.get_total_pot();
+
+      // All players lose their pots except the (single) winner who wins the total pot minus its player pot
+      NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
+      for(int n = 0; n < N_PLAYERS; n++) {
+	if(get_is_active(n, active_bm_u8)) {
+	  player_profits.profits[n] = (double) (total_pot - player_pots.pots[n]);
+	} else {
+	  player_profits.profits[n] = (double) -player_pots.pots[n];
+	}
+      }
+      
+      return player_profits;
+    }
     
     template <int N_PLAYERS>
     struct NodeEval {
@@ -140,6 +166,13 @@ namespace Poker {
       double activity;
       // Sum over all hands of per-hand (product of) 'probability of reaching this node' times 'player outcome for the hand'.
       NodeEvalPerPlayerProfit<N_PLAYERS> player_profits;
+
+      // Accumulate results of a hand eval at this node
+      inline void accumulate(double hand_activity, const NodeEvalPerPlayerProfit<N_PLAYERS> hand_profits) {
+	activity += hand_activity;
+
+	player_profits.accumulate(hand_profits);
+      }
     };
     
     template <
