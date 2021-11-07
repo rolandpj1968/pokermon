@@ -285,6 +285,11 @@ namespace Poker {
       }
     };
     
+    template <int N_PLAYERS>
+    struct PlayerHandRankings {
+      HandRankingT rankings[N_PLAYERS];
+    };
+    
   } // namespace Gto
   
 } // namespace Poker
