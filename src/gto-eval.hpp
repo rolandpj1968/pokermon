@@ -194,25 +194,25 @@ namespace Poker {
       
       NodeEval<N_PLAYERS> eval;
 
-      template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
-      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+      template <typename PlayerStrategyT, typename PerPlayerHandListT>
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PerPlayerHandListT& player_hands) {
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
 	
-	auto currPlayerStrategy = PerPlayerStrategyListT::get<PLAYER_NO>(playerStrategies);
+	const PlayerStrategyT& curr_player_strategy = player_strategies.get_player_strategy(PLAYER_NO);
 
-	auto foldStrategies = playerStrategies.fold();
-	double fold_p = currPlayerStrategy.fold_p;
-	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = this.fold.evaluate(node_prob*fold_p, foldStrategies, playerHands);
+	auto fold_strategies = PlayerStrategiesFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_strategies(player_strategies);
+	double fold_p = curr_player_strategy.fold_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = this.fold.evaluate(node_prob*fold_p, fold_strategies, player_hands);
 	player_profits.accumulate(fold_p, fold_profits);
 
-	auto callStrategies = playerStrategies.call();
-	double call_p = currPlayerStrategy.call_p;
-	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = this.call.evaluate(node_prob*call_p, callStrategies, playerHands);
+	auto call_strategies = PlayerStrategiesCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_strategies(player_strategies);
+	double call_p = curr_player_strategy.call_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = this.call.evaluate(node_prob*call_p, call_strategies, player_hands);
 	player_profits.accumulate(call_p, call_profits);
 
-	auto raiseStrategies = playerStrategies.raise();
-	double raise_p = currPlayerStrategy.raise_p;
-	NodeEvalPerPlayerProfit<N_PLAYERS> raise_profits = this.raise.evaluate(node_prob*raise_p, raiseStrategies, playerHands);
+	auto raise_strategies = PlayerStrategiesRaiseGetter<N_PLAYERS, PlayerStrategyT>::get_raise_strategies(player_strategies);
+	double raise_p = curr_player_strategy.raise_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> raise_profits = this.raise.evaluate(node_prob*raise_p, raise_strategies, player_hands);
 	player_profits.accumulate(raise_p, raise_profits);
 
 	eval.accumulate(node_prob, player_profits);
@@ -242,7 +242,7 @@ namespace Poker {
       NodeEval<N_PLAYERS> eval;
 
       template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
-      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& player_strategies, const PerPlayerHandListT& player_hands) {
 	// The single player remaining takes the pot.
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = make_player_profits_for_one_winner<N_PLAYERS>(ACTIVE_BM, PLAYER_POTS);
 	
@@ -272,6 +272,7 @@ namespace Poker {
       
       NodeEval<N_PLAYERS> eval;
 
+      // TODO $%!@#%!#$%#$%
     };
     
     // Specialisation for current player already folded
@@ -304,11 +305,11 @@ namespace Poker {
       
       dead_t _;
 
-      template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
-      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+      template <typename PlayerStrategyT, typename PerPlayerHandListT>
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PerPlayerHandListT& player_hands) {
 	// Skip this node - it's just a dummy.
-	auto deadStrategies = playerStrategies.dead();
-	return this._.evaluate(node_prob, deadStrategies, playerHands);
+	auto dead_strategies = PlayerStrategiesDeadGetter<N_PLAYERS, PlayerStrategyT>::get_dead_strategies(player_strategies);
+	return this._.evaluate(node_prob, dead_strategies, player_hands);
       }
     
     };
@@ -336,20 +337,20 @@ namespace Poker {
       
       NodeEval<N_PLAYERS> eval;
 
-      template <typename PerPlayerStrategyListT, typename PerPlayerHandListT>
-      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PerPlayerStrategyListT& playerStrategies, const PerPlayerHandListT& playerHands) {
+      template <typename PlayerStrategyT, typename PerPlayerHandListT>
+      inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PerPlayerHandListT& player_hands) {
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
 	
-	auto currPlayerStrategy = PerPlayerStrategyListT::get<PLAYER_NO>(playerStrategies);
+	const PlayerStrategyT& curr_player_strategy = player_strategies.get_player_strategy(PLAYER_NO);
 
-	auto foldStrategies = playerStrategies.fold();
-	double fold_p = currPlayerStrategy.fold_p;
-	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = this.fold.evaluate(node_prob*fold_p, foldStrategies, playerHands);
+	auto foldStrategies = PlayerStrategiesFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_strategies(player_strategies);
+	double fold_p = curr_player_strategy.fold_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = this.fold.evaluate(node_prob*fold_p, foldStrategies, player_hands);
 	player_profits.accumulate(fold_p, fold_profits);
 
-	auto callStrategies = playerStrategies.call();
-	double call_p = currPlayerStrategy.call_p;
-	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = this.call.evaluate(node_prob*call_p, callStrategies, playerHands);
+	auto callStrategies = PlayerStrategiesCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_strategies(player_strategies);
+	double call_p = curr_player_strategy.call_p;
+	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = this.call.evaluate(node_prob*call_p, callStrategies, player_hands);
 	player_profits.accumulate(call_p, call_profits);
 
 	eval.accumulate(node_prob, player_profits);

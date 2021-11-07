@@ -215,6 +215,75 @@ namespace Poker {
       static constexpr int curr_max_bet = get_curr_max_bet(N_PLAYERS, PLAYER_POTS);
       static constexpr int total_pot = player_pots.get_total_pot();
     };
+
+    template <int N_PLAYERS, typename PlayerStrategyT>
+    struct PlayerStrategies {
+      PlayerStrategyT strategies[N_PLAYERS];
+
+      constexpr inline PlayerStrategyT& get_player_strategy(int player_no) const {
+	return *strategies[player_no];
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerStrategyT>
+    struct PlayerStrategiesFoldGetter {
+      typedef typename PlayerStrategyT::fold_t fold_t;
+
+      static constexpr inline PlayerStrategies<N_PLAYERS, fold_t> get_fold_strategies(const PlayerStrategies<N_PLAYERS, PlayerStrategyT> strategies) {
+	PlayerStrategies<N_PLAYERS, fold_t> fold_strategies = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  fold_strategies.strategies[n] = &strategies.strategies[n]->fold;
+	}
+	
+	return fold_strategies;
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerStrategyT>
+    struct PlayerStrategiesCallGetter {
+      typedef typename PlayerStrategyT::call_t call_t;
+
+      static constexpr inline PlayerStrategies<N_PLAYERS, call_t> get_call_strategies(const PlayerStrategies<N_PLAYERS, PlayerStrategyT> strategies) {
+	PlayerStrategies<N_PLAYERS, call_t> call_strategies = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  call_strategies.strategies[n] = &strategies.strategies[n]->call;
+	}
+	
+	return call_strategies;
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerStrategyT>
+    struct PlayerStrategiesRaiseGetter {
+      typedef typename PlayerStrategyT::raise_t raise_t;
+
+      static constexpr inline PlayerStrategies<N_PLAYERS, raise_t> get_raise_strategies(const PlayerStrategies<N_PLAYERS, PlayerStrategyT> strategies) {
+	PlayerStrategies<N_PLAYERS, raise_t> raise_strategies = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  raise_strategies.strategies[n] = &strategies.strategies[n]->raise;
+	}
+	
+	return raise_strategies;
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerStrategyT>
+    struct PlayerStrategiesDeadGetter {
+      typedef typename PlayerStrategyT::dead_t dead_t;
+
+      static constexpr inline PlayerStrategies<N_PLAYERS, dead_t> get_dead_strategies(const PlayerStrategies<N_PLAYERS, PlayerStrategyT> strategies) {
+	PlayerStrategies<N_PLAYERS, dead_t> dead_strategies = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  dead_strategies.strategies[n] = &strategies.strategies[n]->dead;
+	}
+	
+	return dead_strategies;
+      }
+    };
     
   } // namespace Gto
   
