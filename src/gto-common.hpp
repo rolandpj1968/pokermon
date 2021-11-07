@@ -285,6 +285,81 @@ namespace Poker {
       }
     };
     
+    template <int N_PLAYERS, typename PlayerEvalT>
+    struct PlayerEvals {
+      PlayerEvalT evals[N_PLAYERS];
+
+      constexpr inline PlayerEvalT& get_player_eval(int player_no) const {
+	return *evals[player_no];
+      }
+
+      inline void accumulate(double node_prob, const NodeEvalPerPlayerProfit<N_PLAYERS> player_profits) {
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  evals[n]->eval.accumulate(node_prob, player_profits);
+	}
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerEvalT>
+    struct PlayerEvalsFoldGetter {
+      typedef typename PlayerEvalT::fold_t fold_t;
+
+      static constexpr inline PlayerEvals<N_PLAYERS, fold_t> get_fold_evals(const PlayerEvals<N_PLAYERS, PlayerEvalT> evals) {
+	PlayerEvals<N_PLAYERS, fold_t> fold_evals = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  fold_evals.evals[n] = &evals.evals[n]->fold;
+	}
+	
+	return fold_evals;
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerEvalT>
+    struct PlayerEvalsCallGetter {
+      typedef typename PlayerEvalT::call_t call_t;
+
+      static constexpr inline PlayerEvals<N_PLAYERS, call_t> get_call_evals(const PlayerEvals<N_PLAYERS, PlayerEvalT> evals) {
+	PlayerEvals<N_PLAYERS, call_t> call_evals = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  call_evals.evals[n] = &evals.evals[n]->call;
+	}
+	
+	return call_evals;
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerEvalT>
+    struct PlayerEvalsRaiseGetter {
+      typedef typename PlayerEvalT::raise_t raise_t;
+
+      static constexpr inline PlayerEvals<N_PLAYERS, raise_t> get_raise_evals(const PlayerEvals<N_PLAYERS, PlayerEvalT> evals) {
+	PlayerEvals<N_PLAYERS, raise_t> raise_evals = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  raise_evals.evals[n] = &evals.evals[n]->raise;
+	}
+	
+	return raise_evals;
+      }
+    };
+    
+    template <int N_PLAYERS, typename PlayerEvalT>
+    struct PlayerEvalsDeadGetter {
+      typedef typename PlayerEvalT::dead_t dead_t;
+
+      static constexpr inline PlayerEvals<N_PLAYERS, dead_t> get_dead_evals(const PlayerEvals<N_PLAYERS, PlayerEvalT> evals) {
+	PlayerEvals<N_PLAYERS, dead_t> dead_evals = {};
+	
+	for(int n = 0; n < N_PLAYERS; n++) {
+	  dead_evals.evals[n] = &evals.evals[n]->dead;
+	}
+	
+	return dead_evals;
+      }
+    };
+    
     template <int N_PLAYERS>
     struct PlayerHandRankings {
       HandRankingT rankings[N_PLAYERS];

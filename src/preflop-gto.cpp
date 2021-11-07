@@ -1165,6 +1165,138 @@ static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrat
   delete ptr_p1_eval;
 }
 
+typedef Poker::Gto::LimitRootHandStrategy<2> LimitRootTwoHandStrategy;
+typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandStrategy> LimitRootTwoHandHoleHandStrategies;
+typedef Poker::Gto::LimitRootHandEval<2> LimitRootTwoHandEval;
+typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandEval> LimitRootTwoHandHoleHandEvals;
+
+#ifdef NOOOOOOOOOOOO
+
+static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHoleHandStrategies& player_strategies, Dealer::DealerT& dealer, int N_DEALS, double leeway) {
+  if(false) {
+    printf("Evaluating preflop strategies\n\n");
+    dump_p0_strategy(p0_strategy);
+    printf("\n\n");
+    dump_p1_strategy(p1_strategy);
+  }
+
+  HeadsUpPlayerPreflopEval* ptr_p0_eval = new HeadsUpPlayerPreflopEval();
+  HeadsUpPlayerPreflopEval* ptr_p1_eval = new HeadsUpPlayerPreflopEval();
+  HeadsUpPlayerPreflopEval& p0_eval = *ptr_p0_eval;
+  HeadsUpPlayerPreflopEval& p1_eval = *ptr_p1_eval;
+
+  if(false) {
+    // What is the initial state
+    printf("Player 0 - Small Blind - initial state - should be all 0.0\n\n");
+    dump_player_eval(p0_eval);
+    printf("\n\n");
+    printf("Player 1 - Big Blind - initial state - should be all 0.0\n\n");
+    dump_player_eval(p1_eval);
+    printf("\n\n");
+  }
+
+  int n_p0_aa = 0, n_p0_norm_aa = 0;
+  int n_p0_kk = 0, n_p0_norm_kk = 0;
+  int n_hands = 0;
+
+  for(int deal_no = 0; deal_no < N_DEALS; deal_no++) {
+    auto cards = dealer.deal(2+2+3+1+1);
+
+    auto p0_hole = std::make_pair(CardT(cards[0+0]), CardT(cards[0+1]));
+    auto p1_hole = std::make_pair(CardT(cards[2+0]), CardT(cards[2+1]));
+
+    auto p0_hole_norm = holdem_normal(p0_hole.first, p0_hole.second);
+    auto p1_hole_norm = holdem_normal(p1_hole.first, p1_hole.second);
+
+    if((p0_hole.first.rank == Ace || p0_hole.first.rank == AceLow) && (p0_hole.second.rank == Ace || p0_hole.second.rank == AceLow)) {
+      n_p0_aa++;
+    }
+    if((p0_hole_norm.first.rank == Ace || p0_hole_norm.first.rank == AceLow) && (p0_hole_norm.second.rank == Ace || p0_hole_norm.second.rank == AceLow)) {
+      n_p0_norm_aa++;
+    }
+    if(p0_hole.first.rank == King && p0_hole.second.rank == King) {
+      n_p0_kk++;
+    }
+    if(p0_hole_norm.first.rank == King && p0_hole_norm.second.rank == King) {
+      n_p0_norm_kk++;
+    }
+    n_hands++;
+
+    if(false) {
+      printf("Deal: p0 %c%c+%c%c p0-norm %c%c+%c%c p1 %c%c+%c%c p1-norm %c%c+%c%c\n",
+	     RANK_CHARS[p0_hole.first.rank], SUIT_CHARS[p0_hole.first.suit], RANK_CHARS[p0_hole.second.rank], SUIT_CHARS[p0_hole.second.suit], 
+	     RANK_CHARS[p0_hole_norm.first.rank], SUIT_CHARS[p0_hole_norm.first.suit], RANK_CHARS[p0_hole_norm.second.rank], SUIT_CHARS[p0_hole_norm.second.suit], 
+	     RANK_CHARS[p1_hole.first.rank], SUIT_CHARS[p1_hole.first.suit], RANK_CHARS[p1_hole.second.rank], SUIT_CHARS[p1_hole.second.suit], 
+	     RANK_CHARS[p1_hole_norm.first.rank], SUIT_CHARS[p1_hole_norm.first.suit], RANK_CHARS[p1_hole_norm.second.rank], SUIT_CHARS[p1_hole_norm.second.suit]);
+    }
+    
+    HeadsUpWinner winner;
+    {
+      auto flop = std::make_tuple(CardT(cards[2*2]), CardT(cards[2*2 + 1]), CardT(cards[2*2 + 2]));
+      auto turn = CardT(cards[2*2 + 3]);
+      auto river = CardT(cards[2*2 + 4]);
+
+      auto p0_hand_eval = HandEval::eval_hand(p0_hole, flop, turn, river);
+      auto p1_hand_eval = HandEval::eval_hand(p1_hole, flop, turn, river);
+      
+      if(p0_hand_eval > p1_hand_eval) {
+	winner = P0Wins;
+      } else if(p1_hand_eval > p0_hand_eval) {
+	winner = P1Wins;
+      } else {
+	winner = P0P1Push;
+      }
+
+      if(false) {
+	printf("           flop %c%c+%c%c+%c%c turn %c%c river %c%c\n",
+	       RANK_CHARS[std::get<0>(flop).rank], SUIT_CHARS[std::get<0>(flop).suit], RANK_CHARS[std::get<1>(flop).rank], SUIT_CHARS[std::get<1>(flop).suit], RANK_CHARS[std::get<2>(flop).rank], SUIT_CHARS[std::get<2>(flop).suit],
+	       RANK_CHARS[turn.rank], SUIT_CHARS[turn.suit],
+	       RANK_CHARS[river.rank], SUIT_CHARS[river.suit]
+	       );
+	printf("                                                              p0 hand %s p1 hand %s winner %s\n", HAND_EVALS[p0_hand_eval.first], HAND_EVALS[p1_hand_eval.first], WINNER[winner]);
+      }
+    }
+
+    bool p0_is_suited = p0_hole_norm.first.suit == p0_hole_norm.second.suit;
+    RankT p0_rank1 = p0_hole_norm.first.rank == Ace ? AceLow : p0_hole_norm.first.rank;
+    RankT p0_rank2 = p0_hole_norm.second.rank == Ace ? AceLow : p0_hole_norm.second.rank;
+
+    const HeadsUpP0HoleHandStrategy& p0_hand_strategy = p0_strategy.hand_strategies[p0_is_suited][p0_rank1][p0_rank2];
+    HeadsUpPlayerHoleHandEval& p0_hand_eval = p0_eval.hand_evals[p0_is_suited][p0_rank1][p0_rank2];
+    
+    bool p1_is_suited = p1_hole_norm.first.suit == p1_hole_norm.second.suit;
+    RankT p1_rank1 = p1_hole_norm.first.rank == Ace ? AceLow : p1_hole_norm.first.rank;
+    RankT p1_rank2 = p1_hole_norm.second.rank == Ace ? AceLow : p1_hole_norm.second.rank;
+
+    const HeadsUpP1HoleHandStrategy& p1_hand_strategy = p1_strategy.hand_strategies[p1_is_suited][p1_rank1][p1_rank2];
+    HeadsUpPlayerHoleHandEval& p1_hand_eval = p1_eval.hand_evals[p1_is_suited][p1_rank1][p1_rank2];
+
+    eval_heads_up_preflop_deal(p0_hand_strategy, p0_hand_eval, p1_hand_strategy, p1_hand_eval, winner);
+  }
+
+  if(true) {
+    printf("P0 AA %d norm AA %d\n\n", n_p0_aa, n_p0_norm_aa);
+    printf("P0 KK %d norm KK %d\n\n", n_p0_kk, n_p0_norm_kk);
+    printf("   n_hands %d expecting %d - AA is %.4lf%% KK is %.4lf%%\n", n_hands, N_DEALS, (double)n_p0_aa/(double)n_hands * 100.0, (double)n_p0_kk/(double)n_hands * 100.0);
+    // What is the outcome
+    printf("Player 0 - Small Blind - outcomes\n\n");
+    dump_player_eval(p0_eval);
+    printf("\n\n");
+    printf("Player 1 - Big Blind - outcomes\n\n");
+    dump_player_eval(p1_eval);
+    printf("\n\n");
+  }
+
+  printf("Adjusting strategies...\n\n");
+  adjust_p0_strategy(p0_strategy, p0_eval, leeway);
+  adjust_p1_strategy(p1_strategy, p1_eval, leeway);
+
+  delete ptr_p0_eval;
+  delete ptr_p1_eval;
+}
+
+#endif //NOOOOOOOOOOOO
+
 static void converge_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_strategy, HeadsUpP1PreflopStrategy& p1_strategy, Dealer::DealerT& dealer, int N_ROUNDS, int N_DEALS, int N_DEALS_INC, double leeway, double leeway_inc) {
   
   for(int round = 0; round < N_ROUNDS; round++) {
@@ -1191,6 +1323,37 @@ static void converge_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_st
   }
 }
 
+#ifdef NOOOOOOOOOOOO
+
+template <int N_PLAYERS, typename HandStrategyT>
+static void converge_heads_up_preflop_strategies2(LimitRootTwoHandHoleHandStrategies& hole_hand_strategies, Dealer::DealerT& dealer, int N_ROUNDS, int N_DEALS, int N_DEALS_INC, double leeway, double leeway_inc) {
+  
+  for(int round = 0; round < N_ROUNDS; round++) {
+    printf("\n\n");
+    printf("==========================================================================================\n");
+    printf("==============                                                             ===============\n");
+    printf("==============                     Round %3d                               ===============\n", round);
+    printf("==============                                                             ===============\n");
+    printf("==========================================================================================\n\n");
+    printf("deals %d - leeway %.2lf\n\n", N_DEALS, leeway);
+
+    //dump_p0_strategy(p0_strategy); TODO
+    printf("\n\n");
+    //dump_p1_strategy(p1_strategy); TODO
+
+    printf("\n\nEvaluating and adjusting...\n\n");
+
+    converge_heads_up_preflop_strategies_one_round2(hole_hand_strategies, dealer, N_DEALS, leeway);
+    
+    printf("\n\n... finished evaluation and adjustment\n\n");
+    
+    N_DEALS += N_DEALS_INC;
+    leeway += leeway_inc;
+  }
+}
+
+#endif //def NOOOOOOOOOOOO
+
 int main() {
   int N_ROUNDS = 2000;
   int N_DEALS = 10608/*52*51*4*/;
@@ -1200,6 +1363,42 @@ int main() {
   
   std::seed_seq seed{1, 2, 3, 4, 6};
   Dealer::DealerT dealer(seed);
+  
+  HeadsUpP0PreflopStrategy* p0_strategy = new HeadsUpP0PreflopStrategy();
+  HeadsUpP1PreflopStrategy* p1_strategy = new HeadsUpP1PreflopStrategy();
+
+  converge_heads_up_preflop_strategies(*p0_strategy, *p1_strategy, dealer, N_ROUNDS, N_DEALS, N_DEALS_INC, leeway, leeway_inc);
+
+  printf("\n\n");
+  printf("==========================================================================================\n");
+  printf("==============                                                             ===============\n");
+  printf("==============                     Final Strategies                        ===============\n");
+  printf("==============                                                             ===============\n");
+  printf("==========================================================================================\n\n\n");;
+
+  dump_p0_strategy(*p0_strategy);
+  printf("\n\n");
+  dump_p1_strategy(*p1_strategy);
+
+  delete p0_strategy;
+  delete p1_strategy;
+
+  return 0;
+}
+
+
+int main2() {
+  int N_ROUNDS = 2000;
+  int N_DEALS = 10608/*52*51*4*/;
+  int N_DEALS_INC = 10608/*52*51*4*/ / 4;
+  double leeway = 0.1;
+  double leeway_inc = 0.025;
+  
+  std::seed_seq seed{1, 2, 3, 4, 6};
+  Dealer::DealerT dealer(seed);
+
+  // Allocate on heap, not stack cos these are fairly large structures;
+  LimitRootTwoHandHoleHandStrategies* hole_hand_strategies = new LimitRootTwoHandHoleHandStrategies();
   
   HeadsUpP0PreflopStrategy* p0_strategy = new HeadsUpP0PreflopStrategy();
   HeadsUpP1PreflopStrategy* p1_strategy = new HeadsUpP1PreflopStrategy();

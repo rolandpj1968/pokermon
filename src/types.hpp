@@ -38,6 +38,14 @@ namespace Poker {
     NRanks
   };
 
+  static constexpr inline RankT to_ace_low(const RankT rank) {
+    return rank == Ace ? AceLow : rank;
+  }
+
+  static constexpr inline RankT to_ace_hi(const RankT rank) {
+    return rank == AceLow ? Ace : rank;
+  }
+
   static const char* RANK_CHARS = "a23456789XJQKA";
   
   // Note that Ace appears in bit 0 and bit 13 typically

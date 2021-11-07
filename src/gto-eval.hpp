@@ -91,7 +91,10 @@ namespace Poker {
         PLAYER_POTS,
         get_node_type(PLAYER_NO, ACTIVE_BM, N_TO_CALL, N_RAISES_LEFT)
       >
-    {};
+    {
+      template <typename PlayerEvalT, typename PlayerStrategyT>
+      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings);
+    };
     
     // Child node of this eval tree node for current player folding
     template <
@@ -194,7 +197,39 @@ namespace Poker {
       
       NodeEval<N_PLAYERS> eval;
 
-      template <typename PlayerStrategyT, typename PerPlayerHandListT>
+      template <typename PlayerEvalT, typename PlayerStrategyT>
+      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
+	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
+
+	const PlayerStrategyT& curr_player_strategy = player_strategies.get_player_strategy(PLAYER_NO);
+
+	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_evals(player_evals);
+	auto fold_strategies = PlayerStrategiesFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_strategies(player_strategies);
+	double fold_p = curr_player_strategy.fold_p;
+	typedef typename PlayerEvalT::fold_t eval_fold_t;
+	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = eval_fold_t::evaluate_hand(node_prob*fold_p, fold_evals, fold_strategies, player_rankings);
+	player_profits.accumulate(fold_p, fold_profits);
+
+	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_evals(player_evals);
+	auto call_strategies = PlayerStrategiesCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_strategies(player_strategies);
+	double call_p = curr_player_strategy.call_p;
+	typedef typename PlayerEvalT::call_t eval_call_t;
+	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = eval_call_t::evaluate_hand(node_prob*call_p, call_evals, call_strategies, player_rankings);
+	player_profits.accumulate(call_p, call_profits);
+
+	auto raise_evals = PlayerEvalsRaiseGetter<N_PLAYERS, PlayerStrategyT>::get_raise_evals(player_evals);
+	auto raise_strategies = PlayerStrategiesRaiseGetter<N_PLAYERS, PlayerStrategyT>::get_raise_strategies(player_strategies);
+	double raise_p = curr_player_strategy.raise_p;
+	typedef typename PlayerEvalT::raise_t eval_raise_t;
+	NodeEvalPerPlayerProfit<N_PLAYERS> raise_profits = eval_raise_t::evaluate_hand(node_prob*raise_p, raise_evals, raise_strategies, player_rankings);
+	player_profits.accumulate(raise_p, raise_profits);
+
+	player_evals.accumulate(node_prob, player_profits);
+
+	return player_profits;
+      }
+      
+      template <typename PlayerEvalT, typename PlayerStrategyT>
       inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
 	
@@ -347,7 +382,7 @@ namespace Poker {
       
       NodeEval<N_PLAYERS> eval;
 
-      template <typename PlayerStrategyT, typename PerPlayerHandListT>
+      template <typename PlayerEvalT, typename PlayerStrategyT>
       inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
 	// The active top-ranked players share the pot
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = make_player_profits_for_showdown<N_PLAYERS>(ACTIVE_BM, PLAYER_POTS, player_rankings);
@@ -389,7 +424,7 @@ namespace Poker {
       
       dead_t _;
 
-      template <typename PlayerStrategyT, typename PerPlayerHandListT>
+      template <typename PlayerEvalT, typename PlayerStrategyT>
       inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
 	// Skip this node - it's just a dummy.
 	auto dead_strategies = PlayerStrategiesDeadGetter<N_PLAYERS, PlayerStrategyT>::get_dead_strategies(player_strategies);
@@ -421,7 +456,7 @@ namespace Poker {
       
       NodeEval<N_PLAYERS> eval;
 
-      template <typename PlayerStrategyT, typename PerPlayerHandListT>
+      template <typename PlayerEvalT, typename PlayerStrategyT>
       inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate(double node_prob, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
 	
@@ -460,6 +495,54 @@ namespace Poker {
 	/*N_RAISES_LEFT*/N_RAISES,
 	/*PLAYER_POTS*/make_root_player_pots(SMALL_BLIND, BIG_BLIND)
 	> type_t;
+    };
+
+    template <typename T>
+    struct PerHoleHandContainer {
+      // Pocket pair hole hands
+      // Indexed AceLow (0) ... King (12)
+      T pocket_pairs[13];
+
+      // Suited non-pairs
+      // Indexed densely
+      T suited[13*12/2];
+
+      // Offsuit non-pairs
+      // Indexed densely
+      T offsuit[13*12/2];
+
+      // rank0 > rank1
+      // rank0, rank1 in [0..13)
+      static constexpr size_t get_non_pair_index(size_t rank0, size_t rank1) {
+	size_t total_size = 13*12/2;
+	size_t rank0_remaining = rank0*(rank0-1)/2;
+	size_t rank0_offset = total_size - rank0_remaining;
+			   
+	return rank0_offset + rank1;
+      }
+
+      inline T& get_value(const CardT card0, const CardT card1) {
+	// Ensure AceLow - i.e. ranks in [0..13)
+	RankT rank0 = to_ace_low(card0.rank);
+	RankT rank1 = to_ace_low(card1.rank);
+
+	if(rank0 == rank1) {
+	  return pocket_pairs[rank0];
+	}
+
+	// Ensure rank0 >= rank1
+	if(rank0 < rank1) {
+	  RankT tmp = rank0; rank0 = rank1; rank1 = tmp;
+	}
+
+	size_t non_pair_index = get_non_pair_index((size_t)rank0, (size_t)rank1);
+
+	if(card0.suit == card1.suit) {
+	  return suited[non_pair_index];
+	} else {
+	  return offsuit[non_pair_index];
+	}
+      }
     };
 
     // Let's see if we and gcc got this right...
