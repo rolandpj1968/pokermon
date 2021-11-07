@@ -10,139 +10,17 @@
 
 using namespace Poker;
 
-// Used for fold/call/raise and fold/check/raise nodes.
-//   fold, call, raise each in [0.0, 1.0]
-//   fold + call + raise == 1.0
-struct FoldCallRaiseStrategy {
-  double fold_p;
-  double call_p;
-  double raise_p;
+typedef Poker::Gto::LimitRootHandStrategy<2> LimitRootTwoHandStrategy;
+typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandStrategy> LimitRootTwoHandHoleHandStrategies;
+typedef Poker::Gto::LimitRootHandEval<2> LimitRootTwoHandEval;
+typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandEval> LimitRootTwoHandHoleHandEvals;
 
-  FoldCallRaiseStrategy() :
-    fold_p(1.0/3.0), call_p(1.0/3.0), raise_p(1.0/3.0) {}
-};
+typedef Poker::Gto::GtoStrategy</*CAN_RAISE*/true> FoldCallRaiseStrategy;
+typedef Poker::Gto::GtoStrategy</*CAN_RAISE*/false> FoldCallStrategy;
 
 // Clamp minimum strategy probability in order to avoid underflow deep in the tree.
 // This should (tm) have minimal impact on final outcome.
 static const double MIN_STRATEGY = 0.000001;
-
-// Adjust strategy according to empirical outcomes - reward the more profitable options and
-//   penalise the less profitable options.
-// @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
-//    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
-void adjust_strategy(FoldCallRaiseStrategy& strategy, double fold_profit, double call_profit, double raise_profit, double leeway) {
-  // printf("                  adjust_strategy fold_profit %.4lf call_profit %.4lf raise_profit %.4lf\n", fold_profit, call_profit, raise_profit);
-  // Normalise profits to be 0-based.
-  double min_profit = std::min(fold_profit, std::min(call_profit, raise_profit));
-  // All positive...
-  fold_profit -= min_profit; call_profit -= min_profit; raise_profit -= min_profit;
-  // printf("                                  fold_profit %.4lf call_profit %.4lf raise_profit %.4lf after subtracting min_profit %.4lf\n", fold_profit, call_profit, raise_profit, min_profit);
-
-  // Normalise profits to sum to 1.0
-  double sum_profits = fold_profit + call_profit + raise_profit;
-  fold_profit /= sum_profits; call_profit /= sum_profits; raise_profit /= sum_profits;
-  // printf("                                  fold_profit %.4lf call_profit %.4lf raise_profit %.4lf after dividing by sum_profits %.4lf\n", fold_profit, call_profit, raise_profit, sum_profits);
-
-  // Give some leeway
-  fold_profit += leeway; call_profit += leeway; raise_profit += leeway;
-  // printf("                                  fold_profit %.4lf call_profit %.4lf raise_profit %.4lf after adding leeway %.4lf\n", fold_profit, call_profit, raise_profit, leeway);
-
-  // Adjust strategies...
-  double fold_p = strategy.fold_p * fold_profit;
-  double call_p = strategy.call_p * call_profit;
-  double raise_p = strategy.raise_p * raise_profit;
-
-  // printf("                                      fold_p  %.4lf * %.4lf -> %.4lf\n", strategy.fold_p, fold_profit, fold_p);
-  // printf("                                      call_p  %.4lf * %.4lf -> %.4lf\n", strategy.call_p, call_profit, call_p);
-  // printf("                                      raise_p %.4lf * %.4lf -> %.4lf\n", strategy.raise_p, raise_profit, raise_p);
-
-  // Strategies must sum to 1.0
-  double sum_p = fold_p + call_p + raise_p;
-  strategy.fold_p = fold_p/sum_p;
-  strategy.call_p = call_p/sum_p;
-  strategy.raise_p = raise_p/sum_p;
-  // printf("                                        fold_p  %.4lf / %.4lf -> %.4lf\n", fold_p, sum_p, strategy.fold_p);
-  // printf("                                        call_p  %.4lf / %.4lf -> %.4lf\n", call_p, sum_p, strategy.call_p);
-  // printf("                                        raise_p %.4lf / %.4lf -> %.4lf\n", raise_p, sum_p, strategy.raise_p);
-
-  // Clamp minimum probability
-  double* max_prob_p = &strategy.fold_p;
-  if(strategy.call_p > strategy.fold_p) {
-    max_prob_p = &strategy.call_p;
-  }
-  if(strategy.raise_p > strategy.fold_p) {
-    max_prob_p = &strategy.raise_p;
-  }
-  if(strategy.fold_p < MIN_STRATEGY) {
-    double diff = MIN_STRATEGY - strategy.fold_p;
-    *max_prob_p -= diff;
-    strategy.fold_p = MIN_STRATEGY;
-  }
-  if(strategy.call_p < MIN_STRATEGY) {
-    double diff = MIN_STRATEGY - strategy.call_p;
-    *max_prob_p -= diff;
-    strategy.call_p = MIN_STRATEGY;
-  }
-  if(strategy.raise_p < MIN_STRATEGY) {
-    double diff = MIN_STRATEGY - strategy.raise_p;
-    *max_prob_p -= diff;
-    strategy.raise_p = MIN_STRATEGY;
-  }
-}
-
-// Used for fold/call and fold/check nodes.
-//   fold, call each in [0.0, 1.0]
-//   fold + call == 1.0
-struct FoldCallStrategy {
-  double fold_p;
-  double call_p;
-
-  FoldCallStrategy() :
-    fold_p(1.0/2.0), call_p(1.0/2.0) {}
-};
-
-// Adjust strategy according to empirical outcomes - reward the more profitable options and
-//   penalise the less profitable options.
-// @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
-//    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
-void adjust_strategy(FoldCallStrategy& strategy, double fold_profit, double call_profit, double leeway) {
-  // Normalise profits to be 0-based.
-  double min_profit = std::min(fold_profit, call_profit);
-  // All positive and 0-based...
-  fold_profit -= min_profit; call_profit -= min_profit;
-
-  // Normalise profits to sum to 1.0
-  double sum_profits = fold_profit + call_profit;
-  fold_profit /= sum_profits; call_profit /= sum_profits;
-
-  // Give some leeway
-  fold_profit += leeway; call_profit += leeway;
-
-  // Adjust strategies...
-  double fold_p = strategy.fold_p * fold_profit;
-  double call_p = strategy.call_p * call_profit;
-
-  // Strategies must sum to 1.0
-  double sum_p = fold_p + call_p;
-  strategy.fold_p = fold_p/sum_p;
-  strategy.call_p = call_p/sum_p;
-
-  // Clamp minimum probability
-  double* max_prob_p = &strategy.fold_p;
-  if(strategy.call_p > strategy.fold_p) {
-    max_prob_p = &strategy.call_p;
-  }
-  if(strategy.fold_p < MIN_STRATEGY) {
-    double diff = MIN_STRATEGY - strategy.fold_p;
-    *max_prob_p -= diff;
-    strategy.fold_p = MIN_STRATEGY;
-  }
-  if(strategy.call_p < MIN_STRATEGY) {
-    double diff = MIN_STRATEGY - strategy.call_p;
-    *max_prob_p -= diff;
-    strategy.call_p = MIN_STRATEGY;
-  }
-}
 
 // Player 0 (Small Blind) Strategy in heads-up for a particular hole card hand.
 // Fold/Call/Check/Raise probabilities for Player 0 heads-up.
@@ -912,22 +790,22 @@ static void adjust_p0_hand_strategy(HeadsUpP0HoleHandStrategy& hand_strategy, co
   // printf("\n            p0-call  "); dump_eval(hand_eval.p0_called.eval);
   // printf("\n            p0-raise "); dump_eval(hand_eval.p0_raised.eval);
   // printf("\n");
-  adjust_strategy(hand_strategy.open,
+  hand_strategy.open.adjust(
 		  rel_p0_profit(hand_eval.p0_folded.eval),
 		  rel_p0_profit(hand_eval.p0_called.eval),
 		  rel_p0_profit(hand_eval.p0_raised.eval),
 		  leeway);
   // printf("          end of open\n");
-  adjust_strategy(hand_strategy.p0_called_p1_raised,
+  hand_strategy.p0_called_p1_raised.adjust(
 		  rel_p0_profit(hand_eval.p0_called.p1_raised.p0_folded.eval),
 		  rel_p0_profit(hand_eval.p0_called.p1_raised.p0_called.eval),
 		  rel_p0_profit(hand_eval.p0_called.p1_raised.p0_raised.eval),
 		  leeway);
-  adjust_strategy(hand_strategy.p0_called_p1_raised_p0_raised_p1_raised,
+  hand_strategy.p0_called_p1_raised_p0_raised_p1_raised.adjust(
 		  rel_p0_profit(hand_eval.p0_called.p1_raised.p0_raised.p1_raised.p0_folded.eval),
 		  rel_p0_profit(hand_eval.p0_called.p1_raised.p0_raised.p1_raised.p0_called.eval),
 		  leeway);
-  adjust_strategy(hand_strategy.p0_raised_p1_raised,
+  hand_strategy.p0_raised_p1_raised.adjust(
 		  rel_p0_profit(hand_eval.p0_raised.p1_raised.p0_folded.eval),
 		  rel_p0_profit(hand_eval.p0_raised.p1_raised.p0_called.eval),
 		  rel_p0_profit(hand_eval.p0_raised.p1_raised.p0_raised.eval),
@@ -940,23 +818,23 @@ static void adjust_p1_hand_strategy(HeadsUpP1HoleHandStrategy& hand_strategy, co
   // printf("\n            p1-call  "); dump_eval(hand_eval.p0_called.p1_called.eval);
   // printf("\n            p1-raise "); dump_eval(hand_eval.p0_called.p1_raised.eval);
   // printf("\n");
-  adjust_strategy(hand_strategy.p0_called,
+  hand_strategy.p0_called.adjust(
 		  rel_p1_profit(hand_eval.p0_called.p1_folded.eval),
 		  rel_p1_profit(hand_eval.p0_called.p1_called.eval),
 		  rel_p1_profit(hand_eval.p0_called.p1_raised.eval),
 		  leeway);
   // printf("          end of p0-called\n");
-  adjust_strategy(hand_strategy.p0_called_p1_raised_p0_raised,
+  hand_strategy.p0_called_p1_raised_p0_raised.adjust(
 		  rel_p1_profit(hand_eval.p0_called.p1_raised.p0_raised.p1_folded.eval),
 		  rel_p1_profit(hand_eval.p0_called.p1_raised.p0_raised.p1_called.eval),
 		  rel_p1_profit(hand_eval.p0_called.p1_raised.p0_raised.p1_raised.eval),
 		  leeway);
-  adjust_strategy(hand_strategy.p0_raised,
+  hand_strategy.p0_raised.adjust(
 		  rel_p1_profit(hand_eval.p0_raised.p1_folded.eval),
 		  rel_p1_profit(hand_eval.p0_raised.p1_called.eval),
 		  rel_p1_profit(hand_eval.p0_raised.p1_raised.eval),
 		  leeway);
-  adjust_strategy(hand_strategy.p0_raised_p1_raised_p0_raised,
+  hand_strategy.p0_raised_p1_raised_p0_raised.adjust(
 		  rel_p1_profit(hand_eval.p0_raised.p1_raised.p0_raised.p1_folded.eval),
 		  rel_p1_profit(hand_eval.p0_raised.p1_raised.p0_raised.p1_called.eval),
 		  leeway);
@@ -1164,11 +1042,6 @@ static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrat
   delete ptr_p0_eval;
   delete ptr_p1_eval;
 }
-
-typedef Poker::Gto::LimitRootHandStrategy<2> LimitRootTwoHandStrategy;
-typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandStrategy> LimitRootTwoHandHoleHandStrategies;
-typedef Poker::Gto::LimitRootHandEval<2> LimitRootTwoHandEval;
-typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandEval> LimitRootTwoHandHoleHandEvals;
 
 #ifdef NOOOOOOOOOOOO
 
@@ -1418,6 +1291,8 @@ int main2() {
 
   delete p0_strategy;
   delete p1_strategy;
+
+  delete hole_hand_strategies;
 
   return 0;
 }
