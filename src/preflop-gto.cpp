@@ -10,9 +10,9 @@
 
 using namespace Poker;
 
-typedef Poker::Gto::LimitRootHandStrategy<2> LimitRootTwoHandStrategy;
+typedef typename Poker::Gto::LimitRootHandStrategy<2>::type_t LimitRootTwoHandStrategy;
 typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandStrategy> LimitRootTwoHandHoleHandStrategies;
-typedef Poker::Gto::LimitRootHandEval<2> LimitRootTwoHandEval;
+typedef typename Poker::Gto::LimitRootHandEval<2>::type_t LimitRootTwoHandEval;
 typedef Poker::Gto::PerHoleHandContainer<LimitRootTwoHandEval> LimitRootTwoHandHoleHandEvals;
 
 typedef Poker::Gto::GtoStrategy</*CAN_RAISE*/true> FoldCallRaiseStrategy;
@@ -621,12 +621,28 @@ static void dump_p0_hand_strategy(int rank1, int rank2, bool suited, const Heads
   printf("  raise-raise:            "); dump_fold_call_raise_strategy(hand_strategy.p0_raised_p1_raised); printf("\n");
 }
 
+static void dump_p0_hand_strategy2(int rank1, int rank2, bool suited, const LimitRootTwoHandStrategy& hand_strategy) {
+  printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf("  open:                   "); dump_fold_call_raise_strategy(hand_strategy.strategy); printf("\n");
+  printf("  call-raise:             "); dump_fold_call_raise_strategy(hand_strategy.call.raise.strategy); printf("\n");
+  printf("  call-raise-raise-raise: "); dump_fold_call_strategy(hand_strategy.call.raise.raise.raise.strategy); printf("\n");
+  printf("  raise-raise:            "); dump_fold_call_raise_strategy(hand_strategy.raise.raise.strategy); printf("\n");
+}
+
 static void dump_p1_hand_strategy(int rank1, int rank2, bool suited, const HeadsUpP1HoleHandStrategy& hand_strategy) {
   printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf("  call:                   "); dump_fold_call_raise_strategy(hand_strategy.p0_called); printf("\n");
   printf("  call-raise-raise:       "); dump_fold_call_raise_strategy(hand_strategy.p0_called_p1_raised_p0_raised); printf("\n");
   printf("  raise:                  "); dump_fold_call_raise_strategy(hand_strategy.p0_raised); printf("\n");
   printf("  raise-raise-raise:      "); dump_fold_call_strategy(hand_strategy.p0_raised_p1_raised_p0_raised); printf("\n");
+}
+
+static void dump_p1_hand_strategy(int rank1, int rank2, bool suited, const LimitRootTwoHandStrategy& hand_strategy) {
+  printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf("  call:                   "); dump_fold_call_raise_strategy(hand_strategy.call.strategy); printf("\n");
+  printf("  call-raise-raise:       "); dump_fold_call_raise_strategy(hand_strategy.call.raise.raise.strategy); printf("\n");
+  printf("  raise:                  "); dump_fold_call_raise_strategy(hand_strategy.raise.strategy); printf("\n");
+  printf("  raise-raise-raise:      "); dump_fold_call_strategy(hand_strategy.raise.raise.raise.strategy); printf("\n");
 }
 
 static void dump_p0_strategy(const HeadsUpP0PreflopStrategy& p0_strategy) {
@@ -719,6 +735,55 @@ static void dump_p1_strategy(const HeadsUpP1PreflopStrategy& p1_strategy) {
   }
 }
 
+static void dump_player_strategy(bool is_p0, const LimitRootTwoHandHoleHandStrategies& strategies) {
+
+  printf("Player %c - Small Blind - Strategy:\n\n", (is_p0 ? '0' : '1'));
+  
+  // Pocket pairs
+  bool suited = false;
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    int rank1 = rank == Ace ? AceLow : rank;
+
+    dump_p0_hand_strategy2(rank1, rank1, suited, strategies.pocket_pairs[rank1]);
+  }
+  
+  printf("\n\n");
+  
+  // Suited
+  suited = true;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+
+      size_t r0 = rank1 == Ace ? rank2 : rank1;
+      size_t r1 = rank1 == Ace ? AceLow : rank2;
+      dump_p0_hand_strategy2(rank1, rank2, suited, strategies.suited[LimitRootTwoHandHoleHandStrategies::get_non_pair_index(r0, r1)]);
+    }
+
+    printf("\n");
+  }
+
+  printf("\n\n");
+  
+  // Off-suit
+  suited = false;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    int rank1 = rank_hi == Ace ? 0 : rank_hi;
+    
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      int rank2 = rank_lo == Ace ? 0 : rank_lo;
+  
+      size_t r0 = rank1 == Ace ? rank2 : rank1;
+      size_t r1 = rank1 == Ace ? AceLow : rank2;
+      dump_p0_hand_strategy2(rank1, rank2, suited, strategies.offsuit[LimitRootTwoHandHoleHandStrategies::get_non_pair_index(r0, r1)]);
+    }
+
+    printf("\n");
+  }
+}
+
 static void dump_hand_eval(int rank1, int rank2, bool suited, const HeadsUpPlayerHoleHandEval& hand_eval, double& total_activity, double& total_p0_profit, double& total_p1_profit) {
   printf("%c%c%c", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf(" activity: %11.4lf p0 %11.4lf p1 %11.4lf rel-p0 %6.4lf rel-p1 %6.4lf\n", hand_eval.eval.activity, hand_eval.eval.p0_profit, hand_eval.eval.p1_profit, hand_eval.eval.p0_profit/hand_eval.eval.activity, hand_eval.eval.p1_profit/hand_eval.eval.activity);
@@ -726,6 +791,16 @@ static void dump_hand_eval(int rank1, int rank2, bool suited, const HeadsUpPlaye
   total_activity += hand_eval.eval.activity;
   total_p0_profit += hand_eval.eval.p0_profit;
   total_p1_profit += hand_eval.eval.p1_profit;
+}
+
+static void dump_hand_eval2(int rank1, int rank2, bool suited, const LimitRootTwoHandEval& hand_eval, double& total_activity, double& total_p0_profit, double& total_p1_profit) {
+  // TODO hrmmm, what does rel-p0, rel-p1 even mean?
+  printf("%c%c%c", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf(" activity: %11.4lf p0 %11.4lf p1 %11.4lf rel-p0 %6.4lf rel-p1 %6.4lf\n", hand_eval.eval.activity, hand_eval.eval.player_profits.profits[0], hand_eval.eval.player_profits.profits[1], hand_eval.eval.player_profits.profits[0]/hand_eval.eval.activity, hand_eval.eval.player_profits.profits[1]/hand_eval.eval.activity);
+
+  total_activity += hand_eval.eval.activity;
+  total_p0_profit += hand_eval.eval.player_profits.profits[0];
+  total_p1_profit += hand_eval.eval.player_profits.profits[1];
 }
 
 static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {

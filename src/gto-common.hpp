@@ -135,7 +135,7 @@ namespace Poker {
 
       inline void accumulate(double hand_activity, const NodeEvalPerPlayerProfit<N_PLAYERS> hand_profits) {
 	for(int i = 0; i < N_PLAYERS; i++) {
-	  profits[i] += hand_profits.profits[i];
+	  profits[i] += hand_activity*hand_profits.profits[i];
 	}
       }
       
@@ -171,7 +171,7 @@ namespace Poker {
       inline void accumulate(double hand_activity, const NodeEvalPerPlayerProfit<N_PLAYERS> hand_profits) {
 	activity += hand_activity;
 
-	player_profits.accumulate(hand_profits);
+	player_profits.accumulate(hand_activity, hand_profits);
       }
     };
     
