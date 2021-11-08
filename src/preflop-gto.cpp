@@ -189,8 +189,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		 p0_fold_p0_profit,
 		 p0_fold_p1_profit);
 	       
-    p0_profit += p0_fold_p * p0_fold_p0_profit;
-    p1_profit += p0_fold_p * p0_fold_p1_profit;
+    // p0_profit += p0_fold_p * p0_fold_p0_profit;
+    // p1_profit += p0_fold_p * p0_fold_p1_profit;
+    p0_profit += p0_strategy.open.fold_p * p0_fold_p0_profit;
+    p1_profit += p0_strategy.open.fold_p * p0_fold_p1_profit;
     
   } // p0_fold
 
@@ -214,8 +216,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_call_p1_fold_p0_profit,
 		   p0_call_p1_fold_p1_profit);
 								       
-      p0_call_p0_profit += p0_call_p1_fold_p * p0_call_p1_fold_p0_profit;
-      p0_call_p1_profit += p0_call_p1_fold_p * p0_call_p1_fold_p1_profit;
+      // p0_call_p0_profit += p0_call_p1_fold_p * p0_call_p1_fold_p0_profit;
+      // p0_call_p1_profit += p0_call_p1_fold_p * p0_call_p1_fold_p1_profit;
+      p0_call_p0_profit += p1_strategy.p0_called.fold_p * p0_call_p1_fold_p0_profit;
+      p0_call_p1_profit += p1_strategy.p0_called.fold_p * p0_call_p1_fold_p1_profit;
       
     } // p1_fold
 
@@ -234,13 +238,13 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_call_p1_call_p0_profit,
 		   p0_call_p1_call_p1_profit);
 								       
-      p0_call_p0_profit += p0_call_p1_call_p * p0_call_p1_call_p0_profit;
-      p0_call_p1_profit += p0_call_p1_call_p * p0_call_p1_call_p1_profit;
+      // p0_call_p0_profit += p0_call_p1_call_p * p0_call_p1_call_p0_profit;
+      // p0_call_p1_profit += p0_call_p1_call_p * p0_call_p1_call_p1_profit;
+      p0_call_p0_profit += p1_strategy.p0_called.call_p * p0_call_p1_call_p0_profit;
+      p0_call_p1_profit += p1_strategy.p0_called.call_p * p0_call_p1_call_p1_profit;
       
     } // p1_call
 
-    //#ifdef no_p1_raise
-    
     { // p1_raise
       double p0_call_p1_raise_p = p0_call_p * p1_strategy.p0_called.raise_p;
 
@@ -261,8 +265,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_call_p1_raise_p0_fold_p0_profit,
 		     p0_call_p1_raise_p0_fold_p1_profit);
 								       
-	p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_fold_p * p0_call_p1_raise_p0_fold_p0_profit;
-	p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_fold_p * p0_call_p1_raise_p0_fold_p1_profit;
+	// p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_fold_p * p0_call_p1_raise_p0_fold_p0_profit;
+	// p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_fold_p * p0_call_p1_raise_p0_fold_p1_profit;
+	p0_call_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised.fold_p * p0_call_p1_raise_p0_fold_p0_profit;
+	p0_call_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised.fold_p * p0_call_p1_raise_p0_fold_p1_profit;
 	  
       } // p0_fold
 
@@ -281,8 +287,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_call_p1_raise_p0_call_p0_profit,
 		     p0_call_p1_raise_p0_call_p1_profit);
 								       
-	p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_call_p * p0_call_p1_raise_p0_call_p0_profit;
-	p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_call_p * p0_call_p1_raise_p0_call_p1_profit;
+	// p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_call_p * p0_call_p1_raise_p0_call_p0_profit;
+	// p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_call_p * p0_call_p1_raise_p0_call_p1_profit;
+	p0_call_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised.call_p * p0_call_p1_raise_p0_call_p0_profit;
+	p0_call_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised.call_p * p0_call_p1_raise_p0_call_p1_profit;
 	  
       } // p0_call
 
@@ -307,8 +315,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_call_p1_raise_p0_raise_p1_fold_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_fold_p1_profit);
 								       
-	  p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_fold_p * p0_call_p1_raise_p0_raise_p1_fold_p0_profit;
-	  p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_fold_p * p0_call_p1_raise_p0_raise_p1_fold_p1_profit;
+	  // p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_fold_p * p0_call_p1_raise_p0_raise_p1_fold_p0_profit;
+	  // p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_fold_p * p0_call_p1_raise_p0_raise_p1_fold_p1_profit;
+	  p0_call_p1_raise_p0_raise_p0_profit += p1_strategy.p0_called_p1_raised_p0_raised.fold_p * p0_call_p1_raise_p0_raise_p1_fold_p0_profit;
+	  p0_call_p1_raise_p0_raise_p1_profit += p1_strategy.p0_called_p1_raised_p0_raised.fold_p * p0_call_p1_raise_p0_raise_p1_fold_p1_profit;
 	  
 	} // p1_fold
 
@@ -327,8 +337,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_call_p1_raise_p0_raise_p1_call_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_call_p1_profit);
 								       
-	  p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_call_p * p0_call_p1_raise_p0_raise_p1_call_p0_profit;
-	  p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_call_p * p0_call_p1_raise_p0_raise_p1_call_p1_profit;
+	  // p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_call_p * p0_call_p1_raise_p0_raise_p1_call_p0_profit;
+	  // p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_call_p * p0_call_p1_raise_p0_raise_p1_call_p1_profit;
+	  p0_call_p1_raise_p0_raise_p0_profit += p1_strategy.p0_called_p1_raised_p0_raised.call_p * p0_call_p1_raise_p0_raise_p1_call_p0_profit;
+	  p0_call_p1_raise_p0_raise_p1_profit += p1_strategy.p0_called_p1_raised_p0_raised.call_p * p0_call_p1_raise_p0_raise_p1_call_p1_profit;
 	  
 	} // p1_call
 
@@ -343,7 +355,7 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 	    
 	    double p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p = p0_call_p1_raise_p0_raise_p1_raise_p * p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.fold_p;
 
-	    // P0 has 3.0 in the pot; he wins this; P1 wins it.
+	    // P0 has 3.0 in the pot; he loses this; P1 wins it.
 	    double p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit = -3.0;
 	    double p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit = +3.0;
 	    
@@ -353,8 +365,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit);
 								       
-	    p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit;
-	    p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit;
+	    // p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit;
+	    // p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit;
+	    p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit;
+	    p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit;
 	  
 	  } // p0_fold
 	  
@@ -373,8 +387,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit);
 								       
-	    p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit;
-	    p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit;
+	    // p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit;
+	    // p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit;
+	    p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit;
+	    p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit;
 	  
 	  } // p0_call
 	  
@@ -384,8 +400,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_call_p1_raise_p0_raise_p1_raise_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_raise_p1_profit);
 								       
-	  p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p * p0_call_p1_raise_p0_raise_p1_raise_p0_profit;
-	  p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p * p0_call_p1_raise_p0_raise_p1_raise_p1_profit;
+	  // p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p * p0_call_p1_raise_p0_raise_p1_raise_p0_profit;
+	  // p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p * p0_call_p1_raise_p0_raise_p1_raise_p1_profit;
+	  p0_call_p1_raise_p0_raise_p0_profit += p1_strategy.p0_called_p1_raised_p0_raised.raise_p * p0_call_p1_raise_p0_raise_p1_raise_p0_profit;
+	  p0_call_p1_raise_p0_raise_p1_profit += p1_strategy.p0_called_p1_raised_p0_raised.raise_p * p0_call_p1_raise_p0_raise_p1_raise_p1_profit;
 	  
 	} // p1_raise
 
@@ -395,8 +413,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_call_p1_raise_p0_raise_p0_profit,
 		     p0_call_p1_raise_p0_raise_p1_profit);
 								       
-	p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p * p0_call_p1_raise_p0_raise_p0_profit;
-	p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p * p0_call_p1_raise_p0_raise_p1_profit;
+	// p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p * p0_call_p1_raise_p0_raise_p0_profit;
+	// p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p * p0_call_p1_raise_p0_raise_p1_profit;
+	p0_call_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised.raise_p * p0_call_p1_raise_p0_raise_p0_profit;
+	p0_call_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised.raise_p * p0_call_p1_raise_p0_raise_p1_profit;
 	  
       } // p0_raise
 
@@ -406,25 +426,25 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_call_p1_raise_p0_profit,
 		   p0_call_p1_raise_p1_profit);
 								       
-      p0_call_p0_profit += p0_call_p1_raise_p * p0_call_p1_raise_p0_profit;
-      p0_call_p1_profit += p0_call_p1_raise_p * p0_call_p1_raise_p1_profit;
+      // p0_call_p0_profit += p0_call_p1_raise_p * p0_call_p1_raise_p0_profit;
+      // p0_call_p1_profit += p0_call_p1_raise_p * p0_call_p1_raise_p1_profit;
+      p0_call_p0_profit += p1_strategy.p0_called.raise_p * p0_call_p1_raise_p0_profit;
+      p0_call_p1_profit += p1_strategy.p0_called.raise_p * p0_call_p1_raise_p1_profit;
       
     } // p1_call
 
-    //#endif // no_p1_raise
-    
     update_evals(p0_eval.p0_called.eval,
 		 p1_eval.p0_called.eval,
 		 p0_call_p,
 		 p0_call_p0_profit,
 		 p0_call_p1_profit);
 	       
-    p0_profit += p0_call_p * p0_call_p0_profit;
-    p1_profit += p0_call_p * p0_call_p1_profit;
+    // p0_profit += p0_call_p * p0_call_p0_profit;
+    // p1_profit += p0_call_p * p0_call_p1_profit;
+    p0_profit += p0_strategy.open.call_p * p0_call_p0_profit;
+    p1_profit += p0_strategy.open.call_p * p0_call_p1_profit;
     
   } // p0_call
-  
-  //#if 0
   
   // p0_raise
   {
@@ -446,8 +466,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_raise_p1_fold_p0_profit,
 		   p0_raise_p1_fold_p1_profit);
 								       
-      p0_raise_p0_profit += p0_raise_p1_fold_p * p0_raise_p1_fold_p0_profit;
-      p0_raise_p1_profit += p0_raise_p1_fold_p * p0_raise_p1_fold_p1_profit;
+      // p0_raise_p0_profit += p0_raise_p1_fold_p * p0_raise_p1_fold_p0_profit;
+      // p0_raise_p1_profit += p0_raise_p1_fold_p * p0_raise_p1_fold_p1_profit;
+      p0_raise_p0_profit += p1_strategy.p0_raised.fold_p * p0_raise_p1_fold_p0_profit;
+      p0_raise_p1_profit += p1_strategy.p0_raised.fold_p * p0_raise_p1_fold_p1_profit;
       
     } // p1_fold
       
@@ -466,8 +488,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_raise_p1_call_p0_profit,
 		   p0_raise_p1_call_p1_profit);
 								       
-      p0_raise_p0_profit += p0_raise_p1_call_p * p0_raise_p1_call_p0_profit;
-      p0_raise_p1_profit += p0_raise_p1_call_p * p0_raise_p1_call_p1_profit;
+      // p0_raise_p0_profit += p0_raise_p1_call_p * p0_raise_p1_call_p0_profit;
+      // p0_raise_p1_profit += p0_raise_p1_call_p * p0_raise_p1_call_p1_profit;
+      p0_raise_p0_profit += p1_strategy.p0_raised.call_p * p0_raise_p1_call_p0_profit;
+      p0_raise_p1_profit += p1_strategy.p0_raised.call_p * p0_raise_p1_call_p1_profit;
       
     } // p1_call
       
@@ -492,8 +516,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_raise_p1_raise_p0_fold_p0_profit,
 		     p0_raise_p1_raise_p0_fold_p1_profit);
 								       
-	p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_fold_p * p0_raise_p1_raise_p0_fold_p0_profit;
-	p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_fold_p * p0_raise_p1_raise_p0_fold_p1_profit;
+	// p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_fold_p * p0_raise_p1_raise_p0_fold_p0_profit;
+	// p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_fold_p * p0_raise_p1_raise_p0_fold_p1_profit;
+	p0_raise_p1_raise_p0_profit += p0_strategy.p0_raised_p1_raised.fold_p * p0_raise_p1_raise_p0_fold_p0_profit;
+	p0_raise_p1_raise_p1_profit += p0_strategy.p0_raised_p1_raised.fold_p * p0_raise_p1_raise_p0_fold_p1_profit;
 	  
       } // p0_fold
 
@@ -512,8 +538,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_raise_p1_raise_p0_call_p0_profit,
 		     p0_raise_p1_raise_p0_call_p1_profit);
 								       
-	p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_call_p * p0_raise_p1_raise_p0_call_p0_profit;
-	p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_call_p * p0_raise_p1_raise_p0_call_p1_profit;
+	// p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_call_p * p0_raise_p1_raise_p0_call_p0_profit;
+	// p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_call_p * p0_raise_p1_raise_p0_call_p1_profit;
+	p0_raise_p1_raise_p0_profit += p0_strategy.p0_raised_p1_raised.call_p * p0_raise_p1_raise_p0_call_p0_profit;
+	p0_raise_p1_raise_p1_profit += p0_strategy.p0_raised_p1_raised.call_p * p0_raise_p1_raise_p0_call_p1_profit;
 	  
       } // p0_call
 
@@ -538,8 +566,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_raise_p1_raise_p0_raise_p1_fold_p0_profit,
 		       p0_raise_p1_raise_p0_raise_p1_fold_p1_profit);
 								       
-	  p0_raise_p1_raise_p0_raise_p0_profit += p0_raise_p1_raise_p0_raise_p1_fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p0_profit;
-	  p0_raise_p1_raise_p0_raise_p1_profit += p0_raise_p1_raise_p0_raise_p1_fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p1_profit;
+	  // p0_raise_p1_raise_p0_raise_p0_profit += p0_raise_p1_raise_p0_raise_p1_fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p0_profit;
+	  // p0_raise_p1_raise_p0_raise_p1_profit += p0_raise_p1_raise_p0_raise_p1_fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p1_profit;
+	  p0_raise_p1_raise_p0_raise_p0_profit += p1_strategy.p0_raised_p1_raised_p0_raised.fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p0_profit;
+	  p0_raise_p1_raise_p0_raise_p1_profit += p1_strategy.p0_raised_p1_raised_p0_raised.fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p1_profit;
 	  
 	} // p1_fold
 
@@ -558,8 +588,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_raise_p1_raise_p0_raise_p1_call_p0_profit,
 		       p0_raise_p1_raise_p0_raise_p1_call_p1_profit);
 								       
-	  p0_raise_p1_raise_p0_raise_p0_profit += p0_raise_p1_raise_p0_raise_p1_call_p * p0_raise_p1_raise_p0_raise_p1_call_p0_profit;
-	  p0_raise_p1_raise_p0_raise_p1_profit += p0_raise_p1_raise_p0_raise_p1_call_p * p0_raise_p1_raise_p0_raise_p1_call_p1_profit;
+	  // p0_raise_p1_raise_p0_raise_p0_profit += p0_raise_p1_raise_p0_raise_p1_call_p * p0_raise_p1_raise_p0_raise_p1_call_p0_profit;
+	  // p0_raise_p1_raise_p0_raise_p1_profit += p0_raise_p1_raise_p0_raise_p1_call_p * p0_raise_p1_raise_p0_raise_p1_call_p1_profit;
+	  p0_raise_p1_raise_p0_raise_p0_profit += p1_strategy.p0_raised_p1_raised_p0_raised.call_p * p0_raise_p1_raise_p0_raise_p1_call_p0_profit;
+	  p0_raise_p1_raise_p0_raise_p1_profit += p1_strategy.p0_raised_p1_raised_p0_raised.call_p * p0_raise_p1_raise_p0_raise_p1_call_p1_profit;
 	  
 	} // p1_call
 
@@ -569,8 +601,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_raise_p1_raise_p0_raise_p0_profit,
 		     p0_raise_p1_raise_p0_raise_p1_profit);
 								       
-	p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_raise_p * p0_raise_p1_raise_p0_raise_p0_profit;
-	p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_raise_p * p0_raise_p1_raise_p0_raise_p1_profit;
+	// p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_raise_p * p0_raise_p1_raise_p0_raise_p0_profit;
+	// p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_raise_p * p0_raise_p1_raise_p0_raise_p1_profit;
+	p0_raise_p1_raise_p0_profit += p0_strategy.p0_raised_p1_raised.raise_p * p0_raise_p1_raise_p0_raise_p0_profit;
+	p0_raise_p1_raise_p1_profit += p0_strategy.p0_raised_p1_raised.raise_p * p0_raise_p1_raise_p0_raise_p1_profit;
 	  
       } // p0_raise
 
@@ -580,8 +614,10 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_raise_p1_raise_p0_profit,
 		   p0_raise_p1_raise_p1_profit);
 								       
-      p0_raise_p0_profit += p0_raise_p1_raise_p * p0_raise_p1_raise_p0_profit;
-      p0_raise_p1_profit += p0_raise_p1_raise_p * p0_raise_p1_raise_p1_profit;
+      // p0_raise_p0_profit += p0_raise_p1_raise_p * p0_raise_p1_raise_p0_profit;
+      // p0_raise_p1_profit += p0_raise_p1_raise_p * p0_raise_p1_raise_p1_profit;
+      p0_raise_p0_profit += p1_strategy.p0_raised.raise_p * p0_raise_p1_raise_p0_profit;
+      p0_raise_p1_profit += p1_strategy.p0_raised.raise_p * p0_raise_p1_raise_p1_profit;
       
     } // p1_raise
       
@@ -591,13 +627,13 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		 p0_raise_p0_profit,
 		 p0_raise_p1_profit);
 	       
-    p0_profit += p0_raise_p * p0_raise_p0_profit;
-    p1_profit += p0_raise_p * p0_raise_p1_profit;
+    // p0_profit += p0_raise_p * p0_raise_p0_profit;
+    // p1_profit += p0_raise_p * p0_raise_p1_profit;
+    p0_profit += p0_strategy.open.raise_p * p0_raise_p0_profit;
+    p1_profit += p0_strategy.open.raise_p * p0_raise_p1_profit;
     
   } // p0_raise
 
-  //#endif // 0
-  
   update_evals(p0_eval.eval,
 	       p1_eval.eval,
 	       p,
@@ -784,18 +820,29 @@ static void dump_player_strategy(bool is_p0, const LimitRootTwoHandHoleHandStrat
   }
 }
 
-static void dump_hand_eval(int rank1, int rank2, bool suited, const HeadsUpPlayerHoleHandEval& hand_eval, double& total_activity, double& total_p0_profit, double& total_p1_profit) {
-  printf("%c%c%c", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
-  printf(" activity: %11.4lf p0 %11.4lf p1 %11.4lf rel-p0 %6.4lf rel-p1 %6.4lf\n", hand_eval.eval.activity, hand_eval.eval.p0_profit, hand_eval.eval.p1_profit, hand_eval.eval.p0_profit/hand_eval.eval.activity, hand_eval.eval.p1_profit/hand_eval.eval.activity);
+static void dump_node_eval(const HeadsUpNodeEval& eval) {
+  printf("activity: %11.4lf / p0 %+11.4lf / p1 %+11.4lf / rel-p0 %+7.4lf / rel-p1 %+7.4lf", eval.activity, eval.p0_profit, eval.p1_profit, eval.p0_profit/eval.activity, eval.p1_profit/eval.activity);
+}
+
+static void dump_hand_eval(bool is_p0, int rank1, int rank2, bool suited, const HeadsUpPlayerHoleHandEval& hand_eval, double& total_activity, double& total_p0_profit, double& total_p1_profit) {
+  printf("P%c %c%c%c", (is_p0 ? '0' : '1'), RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf(" "); dump_node_eval(hand_eval.eval); printf("\n");
+  printf("                                                                                        open fold  - "); dump_node_eval(hand_eval.p0_folded.eval); printf("\n");
+  printf("                                                                                        open call  - "); dump_node_eval(hand_eval.p0_called.eval); printf("\n");
+  printf("                                                                                        open raise - "); dump_node_eval(hand_eval.p0_raised.eval); printf("\n");
+  printf("                                                                                        r/r..fold  - "); dump_node_eval(hand_eval.p0_raised.p1_raised.p0_folded.eval); printf("\n");
+  printf("                                                                                        r/r..call  - "); dump_node_eval(hand_eval.p0_raised.p1_raised.p0_called.eval); printf("\n");
+  printf("                                                                                        r/r..raise - "); dump_node_eval(hand_eval.p0_raised.p1_raised.p0_raised.eval); printf("\n");
+  printf("                                                                                        r/r/r....f - "); dump_node_eval(hand_eval.p0_raised.p1_raised.p0_raised.p1_folded.eval); printf("\n");
+  printf("                                                                                        r/r/r....c - "); dump_node_eval(hand_eval.p0_raised.p1_raised.p0_raised.p1_called.eval); printf("\n");
 
   total_activity += hand_eval.eval.activity;
   total_p0_profit += hand_eval.eval.p0_profit;
   total_p1_profit += hand_eval.eval.p1_profit;
 }
 
-static void dump_hand_eval2(int rank1, int rank2, bool suited, const LimitRootTwoHandEval& hand_eval, double& total_activity, double& total_p0_profit, double& total_p1_profit) {
-  // TODO hrmmm, what does rel-p0, rel-p1 even mean?
-  printf("%c%c%c", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+static void dump_hand_eval2(bool is_p0, int rank1, int rank2, bool suited, const LimitRootTwoHandEval& hand_eval, double& total_activity, double& total_p0_profit, double& total_p1_profit) {
+  printf("P%c %c%c%c", (is_p0 ? '0' : '1'), RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf(" activity: %11.4lf p0 %11.4lf p1 %11.4lf rel-p0 %6.4lf rel-p1 %6.4lf\n", hand_eval.eval.activity, hand_eval.eval.player_profits.profits[0], hand_eval.eval.player_profits.profits[1], hand_eval.eval.player_profits.profits[0]/hand_eval.eval.activity, hand_eval.eval.player_profits.profits[1]/hand_eval.eval.activity);
 
   total_activity += hand_eval.eval.activity;
@@ -803,14 +850,14 @@ static void dump_hand_eval2(int rank1, int rank2, bool suited, const LimitRootTw
   total_p1_profit += hand_eval.eval.player_profits.profits[1];
 }
 
-static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
+static void dump_player_eval(bool is_p0, const HeadsUpPlayerPreflopEval& eval) {
   double total_activity = 0.0, total_p0_profit = 0.0, total_p1_profit = 0.0;
   
   // Pocket pairs
   bool suited = false;
   for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
     int rank1 = rank == Ace ? AceLow : rank;
-    dump_hand_eval(rank1, rank1, suited, eval.hand_evals[suited][rank1][rank1], total_activity, total_p0_profit, total_p1_profit);
+    dump_hand_eval(is_p0, rank1, rank1, suited, eval.hand_evals[suited][rank1][rank1], total_activity, total_p0_profit, total_p1_profit);
   }
   
   printf("\n\n");
@@ -823,7 +870,7 @@ static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
     for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
       int rank2 = rank_lo == Ace ? 0 : rank_lo;
   
-      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2], total_activity, total_p0_profit, total_p1_profit);
+      dump_hand_eval(is_p0, rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2], total_activity, total_p0_profit, total_p1_profit);
     }
 
     printf("\n");
@@ -839,7 +886,7 @@ static void dump_player_eval(const HeadsUpPlayerPreflopEval& eval) {
     for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
       int rank2 = rank_lo == Ace ? 0 : rank_lo;
   
-      dump_hand_eval(rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2], total_activity, total_p0_profit, total_p1_profit);
+      dump_hand_eval(is_p0, rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2], total_activity, total_p0_profit, total_p1_profit);
     }
 
     printf("\n");
@@ -1011,10 +1058,10 @@ static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrat
   if(false) {
     // What is the initial state
     printf("Player 0 - Small Blind - initial state - should be all 0.0\n\n");
-    dump_player_eval(p0_eval);
+    dump_player_eval(true, p0_eval);
     printf("\n\n");
     printf("Player 1 - Big Blind - initial state - should be all 0.0\n\n");
-    dump_player_eval(p1_eval);
+    dump_player_eval(false, p1_eval);
     printf("\n\n");
   }
 
@@ -1103,10 +1150,10 @@ static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrat
     printf("   n_hands %d expecting %d - AA is %.4lf%% KK is %.4lf%%\n", n_hands, N_DEALS, (double)n_p0_aa/(double)n_hands * 100.0, (double)n_p0_kk/(double)n_hands * 100.0);
     // What is the outcome
     printf("Player 0 - Small Blind - outcomes\n\n");
-    dump_player_eval(p0_eval);
+    dump_player_eval(true, p0_eval);
     printf("\n\n");
     printf("Player 1 - Big Blind - outcomes\n\n");
-    dump_player_eval(p1_eval);
+    dump_player_eval(false, p1_eval);
     printf("\n\n");
   }
 
@@ -1305,6 +1352,8 @@ static void converge_heads_up_preflop_strategies2(LimitRootTwoHandHoleHandStrate
 int main() {
   int N_ROUNDS = 2000;
   int N_DEALS = 10608/*52*51*4*/;
+  // int N_ROUNDS = 1;
+  // int N_DEALS = 1;
   int N_DEALS_INC = 10608/*52*51*4*/ / 4;
   double leeway = 0.1;
   double leeway_inc = 0.025;
@@ -1336,8 +1385,10 @@ int main() {
 
 
 int main2() {
-  int N_ROUNDS = 2000;
-  int N_DEALS = 10608/*52*51*4*/;
+  // int N_ROUNDS = 2000;
+  // int N_DEALS = 10608/*52*51*4*/;
+  int N_ROUNDS = 1;
+  int N_DEALS = 1;
   int N_DEALS_INC = 10608/*52*51*4*/ / 4;
   double leeway = 0.1;
   double leeway_inc = 0.025;
