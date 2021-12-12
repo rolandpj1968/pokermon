@@ -503,6 +503,42 @@ namespace Poker {
 	return rank0_offset + rank1;
       }
 
+      
+      // Demote Ace to AceLow
+      inline void normalise_rank(RankT& rank) {
+	rank = to_ace_low(rank);
+      }
+
+      inline T& get_pocket_pair_value(RankT rank) {
+	normalise_rank(rank);
+
+	return pocket_pairs[rank];
+      }
+
+      // Demote Ace to AceLow and order rank0, rank1 so that:
+      //   rank0 > rank1
+      //   rank0, rank1 in [0..13)
+      inline void normalise_ranks(RankT& rank0, RankT& rank1) {
+	normalise_rank(rank0);
+	normalise_rank(rank1);
+
+	if(rank0 < rank1) {
+	  RankT tmp = rank0; rank0 = rank1; rank1 = tmp;
+	}
+      }
+
+      inline T& get_suited_value(RankT rank0, RankT rank1) {
+	normalise_ranks(rank0, rank1);
+
+	return suited[get_non_pair_index(rank0, rank1)];
+      }
+	    
+      inline T& get_offsuit_value(RankT rank0, RankT rank1) {
+	normalise_ranks(rank0, rank1);
+
+	return offsuit[get_non_pair_index(rank0, rank1)];
+      }
+	    
       inline T& get_value(const CardT card0, const CardT card1) {
 	// Ensure AceLow - i.e. ranks in [0..13)
 	RankT rank0 = to_ace_low(card0.rank);

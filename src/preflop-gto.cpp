@@ -20,7 +20,7 @@ typedef Poker::Gto::GtoStrategy</*CAN_RAISE*/false> FoldCallStrategy;
 
 // Clamp minimum strategy probability in order to avoid underflow deep in the tree.
 // This should (tm) have minimal impact on final outcome.
-static const double MIN_STRATEGY = 0.000001;
+static const double MIN_STRATEGY = 0.000000001;
 
 // Player 0 (Small Blind) Strategy in heads-up for a particular hole card hand.
 // Fold/Call/Check/Raise probabilities for Player 0 heads-up.
@@ -189,8 +189,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		 p0_fold_p0_profit,
 		 p0_fold_p1_profit);
 	       
-    // p0_profit += p0_fold_p * p0_fold_p0_profit;
-    // p1_profit += p0_fold_p * p0_fold_p1_profit;
     p0_profit += p0_strategy.open.fold_p * p0_fold_p0_profit;
     p1_profit += p0_strategy.open.fold_p * p0_fold_p1_profit;
     
@@ -216,8 +214,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_call_p1_fold_p0_profit,
 		   p0_call_p1_fold_p1_profit);
 								       
-      // p0_call_p0_profit += p0_call_p1_fold_p * p0_call_p1_fold_p0_profit;
-      // p0_call_p1_profit += p0_call_p1_fold_p * p0_call_p1_fold_p1_profit;
       p0_call_p0_profit += p1_strategy.p0_called.fold_p * p0_call_p1_fold_p0_profit;
       p0_call_p1_profit += p1_strategy.p0_called.fold_p * p0_call_p1_fold_p1_profit;
       
@@ -238,8 +234,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_call_p1_call_p0_profit,
 		   p0_call_p1_call_p1_profit);
 								       
-      // p0_call_p0_profit += p0_call_p1_call_p * p0_call_p1_call_p0_profit;
-      // p0_call_p1_profit += p0_call_p1_call_p * p0_call_p1_call_p1_profit;
       p0_call_p0_profit += p1_strategy.p0_called.call_p * p0_call_p1_call_p0_profit;
       p0_call_p1_profit += p1_strategy.p0_called.call_p * p0_call_p1_call_p1_profit;
       
@@ -265,8 +259,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_call_p1_raise_p0_fold_p0_profit,
 		     p0_call_p1_raise_p0_fold_p1_profit);
 								       
-	// p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_fold_p * p0_call_p1_raise_p0_fold_p0_profit;
-	// p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_fold_p * p0_call_p1_raise_p0_fold_p1_profit;
 	p0_call_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised.fold_p * p0_call_p1_raise_p0_fold_p0_profit;
 	p0_call_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised.fold_p * p0_call_p1_raise_p0_fold_p1_profit;
 	  
@@ -287,8 +279,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_call_p1_raise_p0_call_p0_profit,
 		     p0_call_p1_raise_p0_call_p1_profit);
 								       
-	// p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_call_p * p0_call_p1_raise_p0_call_p0_profit;
-	// p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_call_p * p0_call_p1_raise_p0_call_p1_profit;
 	p0_call_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised.call_p * p0_call_p1_raise_p0_call_p0_profit;
 	p0_call_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised.call_p * p0_call_p1_raise_p0_call_p1_profit;
 	  
@@ -315,8 +305,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_call_p1_raise_p0_raise_p1_fold_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_fold_p1_profit);
 								       
-	  // p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_fold_p * p0_call_p1_raise_p0_raise_p1_fold_p0_profit;
-	  // p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_fold_p * p0_call_p1_raise_p0_raise_p1_fold_p1_profit;
 	  p0_call_p1_raise_p0_raise_p0_profit += p1_strategy.p0_called_p1_raised_p0_raised.fold_p * p0_call_p1_raise_p0_raise_p1_fold_p0_profit;
 	  p0_call_p1_raise_p0_raise_p1_profit += p1_strategy.p0_called_p1_raised_p0_raised.fold_p * p0_call_p1_raise_p0_raise_p1_fold_p1_profit;
 	  
@@ -337,8 +325,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_call_p1_raise_p0_raise_p1_call_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_call_p1_profit);
 								       
-	  // p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_call_p * p0_call_p1_raise_p0_raise_p1_call_p0_profit;
-	  // p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_call_p * p0_call_p1_raise_p0_raise_p1_call_p1_profit;
 	  p0_call_p1_raise_p0_raise_p0_profit += p1_strategy.p0_called_p1_raised_p0_raised.call_p * p0_call_p1_raise_p0_raise_p1_call_p0_profit;
 	  p0_call_p1_raise_p0_raise_p1_profit += p1_strategy.p0_called_p1_raised_p0_raised.call_p * p0_call_p1_raise_p0_raise_p1_call_p1_profit;
 	  
@@ -365,8 +351,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit);
 								       
-	    // p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit;
-	    // p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit;
 	    p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p0_profit;
 	    p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.fold_p * p0_call_p1_raise_p0_raise_p1_raise_p0_fold_p1_profit;
 	  
@@ -387,8 +371,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit,
 			 p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit);
 								       
-	    // p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit;
-	    // p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p0_call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit;
 	    p0_call_p1_raise_p0_raise_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p0_profit;
 	    p0_call_p1_raise_p0_raise_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised_p0_raised_p1_raised.call_p * p0_call_p1_raise_p0_raise_p1_raise_p0_call_p1_profit;
 	  
@@ -400,8 +382,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_call_p1_raise_p0_raise_p1_raise_p0_profit,
 		       p0_call_p1_raise_p0_raise_p1_raise_p1_profit);
 								       
-	  // p0_call_p1_raise_p0_raise_p0_profit += p0_call_p1_raise_p0_raise_p1_raise_p * p0_call_p1_raise_p0_raise_p1_raise_p0_profit;
-	  // p0_call_p1_raise_p0_raise_p1_profit += p0_call_p1_raise_p0_raise_p1_raise_p * p0_call_p1_raise_p0_raise_p1_raise_p1_profit;
 	  p0_call_p1_raise_p0_raise_p0_profit += p1_strategy.p0_called_p1_raised_p0_raised.raise_p * p0_call_p1_raise_p0_raise_p1_raise_p0_profit;
 	  p0_call_p1_raise_p0_raise_p1_profit += p1_strategy.p0_called_p1_raised_p0_raised.raise_p * p0_call_p1_raise_p0_raise_p1_raise_p1_profit;
 	  
@@ -413,8 +393,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_call_p1_raise_p0_raise_p0_profit,
 		     p0_call_p1_raise_p0_raise_p1_profit);
 								       
-	// p0_call_p1_raise_p0_profit += p0_call_p1_raise_p0_raise_p * p0_call_p1_raise_p0_raise_p0_profit;
-	// p0_call_p1_raise_p1_profit += p0_call_p1_raise_p0_raise_p * p0_call_p1_raise_p0_raise_p1_profit;
 	p0_call_p1_raise_p0_profit += p0_strategy.p0_called_p1_raised.raise_p * p0_call_p1_raise_p0_raise_p0_profit;
 	p0_call_p1_raise_p1_profit += p0_strategy.p0_called_p1_raised.raise_p * p0_call_p1_raise_p0_raise_p1_profit;
 	  
@@ -426,8 +404,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_call_p1_raise_p0_profit,
 		   p0_call_p1_raise_p1_profit);
 								       
-      // p0_call_p0_profit += p0_call_p1_raise_p * p0_call_p1_raise_p0_profit;
-      // p0_call_p1_profit += p0_call_p1_raise_p * p0_call_p1_raise_p1_profit;
       p0_call_p0_profit += p1_strategy.p0_called.raise_p * p0_call_p1_raise_p0_profit;
       p0_call_p1_profit += p1_strategy.p0_called.raise_p * p0_call_p1_raise_p1_profit;
       
@@ -439,8 +415,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		 p0_call_p0_profit,
 		 p0_call_p1_profit);
 	       
-    // p0_profit += p0_call_p * p0_call_p0_profit;
-    // p1_profit += p0_call_p * p0_call_p1_profit;
     p0_profit += p0_strategy.open.call_p * p0_call_p0_profit;
     p1_profit += p0_strategy.open.call_p * p0_call_p1_profit;
     
@@ -466,8 +440,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_raise_p1_fold_p0_profit,
 		   p0_raise_p1_fold_p1_profit);
 								       
-      // p0_raise_p0_profit += p0_raise_p1_fold_p * p0_raise_p1_fold_p0_profit;
-      // p0_raise_p1_profit += p0_raise_p1_fold_p * p0_raise_p1_fold_p1_profit;
       p0_raise_p0_profit += p1_strategy.p0_raised.fold_p * p0_raise_p1_fold_p0_profit;
       p0_raise_p1_profit += p1_strategy.p0_raised.fold_p * p0_raise_p1_fold_p1_profit;
       
@@ -488,8 +460,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_raise_p1_call_p0_profit,
 		   p0_raise_p1_call_p1_profit);
 								       
-      // p0_raise_p0_profit += p0_raise_p1_call_p * p0_raise_p1_call_p0_profit;
-      // p0_raise_p1_profit += p0_raise_p1_call_p * p0_raise_p1_call_p1_profit;
       p0_raise_p0_profit += p1_strategy.p0_raised.call_p * p0_raise_p1_call_p0_profit;
       p0_raise_p1_profit += p1_strategy.p0_raised.call_p * p0_raise_p1_call_p1_profit;
       
@@ -516,8 +486,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_raise_p1_raise_p0_fold_p0_profit,
 		     p0_raise_p1_raise_p0_fold_p1_profit);
 								       
-	// p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_fold_p * p0_raise_p1_raise_p0_fold_p0_profit;
-	// p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_fold_p * p0_raise_p1_raise_p0_fold_p1_profit;
 	p0_raise_p1_raise_p0_profit += p0_strategy.p0_raised_p1_raised.fold_p * p0_raise_p1_raise_p0_fold_p0_profit;
 	p0_raise_p1_raise_p1_profit += p0_strategy.p0_raised_p1_raised.fold_p * p0_raise_p1_raise_p0_fold_p1_profit;
 	  
@@ -538,8 +506,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_raise_p1_raise_p0_call_p0_profit,
 		     p0_raise_p1_raise_p0_call_p1_profit);
 								       
-	// p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_call_p * p0_raise_p1_raise_p0_call_p0_profit;
-	// p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_call_p * p0_raise_p1_raise_p0_call_p1_profit;
 	p0_raise_p1_raise_p0_profit += p0_strategy.p0_raised_p1_raised.call_p * p0_raise_p1_raise_p0_call_p0_profit;
 	p0_raise_p1_raise_p1_profit += p0_strategy.p0_raised_p1_raised.call_p * p0_raise_p1_raise_p0_call_p1_profit;
 	  
@@ -566,8 +532,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_raise_p1_raise_p0_raise_p1_fold_p0_profit,
 		       p0_raise_p1_raise_p0_raise_p1_fold_p1_profit);
 								       
-	  // p0_raise_p1_raise_p0_raise_p0_profit += p0_raise_p1_raise_p0_raise_p1_fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p0_profit;
-	  // p0_raise_p1_raise_p0_raise_p1_profit += p0_raise_p1_raise_p0_raise_p1_fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p1_profit;
 	  p0_raise_p1_raise_p0_raise_p0_profit += p1_strategy.p0_raised_p1_raised_p0_raised.fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p0_profit;
 	  p0_raise_p1_raise_p0_raise_p1_profit += p1_strategy.p0_raised_p1_raised_p0_raised.fold_p * p0_raise_p1_raise_p0_raise_p1_fold_p1_profit;
 	  
@@ -588,8 +552,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		       p0_raise_p1_raise_p0_raise_p1_call_p0_profit,
 		       p0_raise_p1_raise_p0_raise_p1_call_p1_profit);
 								       
-	  // p0_raise_p1_raise_p0_raise_p0_profit += p0_raise_p1_raise_p0_raise_p1_call_p * p0_raise_p1_raise_p0_raise_p1_call_p0_profit;
-	  // p0_raise_p1_raise_p0_raise_p1_profit += p0_raise_p1_raise_p0_raise_p1_call_p * p0_raise_p1_raise_p0_raise_p1_call_p1_profit;
 	  p0_raise_p1_raise_p0_raise_p0_profit += p1_strategy.p0_raised_p1_raised_p0_raised.call_p * p0_raise_p1_raise_p0_raise_p1_call_p0_profit;
 	  p0_raise_p1_raise_p0_raise_p1_profit += p1_strategy.p0_raised_p1_raised_p0_raised.call_p * p0_raise_p1_raise_p0_raise_p1_call_p1_profit;
 	  
@@ -601,8 +563,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		     p0_raise_p1_raise_p0_raise_p0_profit,
 		     p0_raise_p1_raise_p0_raise_p1_profit);
 								       
-	// p0_raise_p1_raise_p0_profit += p0_raise_p1_raise_p0_raise_p * p0_raise_p1_raise_p0_raise_p0_profit;
-	// p0_raise_p1_raise_p1_profit += p0_raise_p1_raise_p0_raise_p * p0_raise_p1_raise_p0_raise_p1_profit;
 	p0_raise_p1_raise_p0_profit += p0_strategy.p0_raised_p1_raised.raise_p * p0_raise_p1_raise_p0_raise_p0_profit;
 	p0_raise_p1_raise_p1_profit += p0_strategy.p0_raised_p1_raised.raise_p * p0_raise_p1_raise_p0_raise_p1_profit;
 	  
@@ -614,8 +574,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		   p0_raise_p1_raise_p0_profit,
 		   p0_raise_p1_raise_p1_profit);
 								       
-      // p0_raise_p0_profit += p0_raise_p1_raise_p * p0_raise_p1_raise_p0_profit;
-      // p0_raise_p1_profit += p0_raise_p1_raise_p * p0_raise_p1_raise_p1_profit;
       p0_raise_p0_profit += p1_strategy.p0_raised.raise_p * p0_raise_p1_raise_p0_profit;
       p0_raise_p1_profit += p1_strategy.p0_raised.raise_p * p0_raise_p1_raise_p1_profit;
       
@@ -627,8 +585,6 @@ static void eval_heads_up_preflop_deal(const HeadsUpP0HoleHandStrategy& p0_strat
 		 p0_raise_p0_profit,
 		 p0_raise_p1_profit);
 	       
-    // p0_profit += p0_raise_p * p0_raise_p0_profit;
-    // p1_profit += p0_raise_p * p0_raise_p1_profit;
     p0_profit += p0_strategy.open.raise_p * p0_raise_p0_profit;
     p1_profit += p0_strategy.open.raise_p * p0_raise_p1_profit;
     
@@ -673,7 +629,7 @@ static void dump_p1_hand_strategy(int rank1, int rank2, bool suited, const Heads
   printf("  raise-raise-raise:      "); dump_fold_call_strategy(hand_strategy.p0_raised_p1_raised_p0_raised); printf("\n");
 }
 
-static void dump_p1_hand_strategy(int rank1, int rank2, bool suited, const LimitRootTwoHandStrategy& hand_strategy) {
+static void dump_p1_hand_strategy2(int rank1, int rank2, bool suited, const LimitRootTwoHandStrategy& hand_strategy) {
   printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf("  call:                   "); dump_fold_call_raise_strategy(hand_strategy.call.strategy); printf("\n");
   printf("  call-raise-raise:       "); dump_fold_call_raise_strategy(hand_strategy.call.raise.raise.strategy); printf("\n");
@@ -720,6 +676,73 @@ static void dump_p0_strategy(const HeadsUpP0PreflopStrategy& p0_strategy) {
       int rank2 = rank_lo == Ace ? 0 : rank_lo;
   
       dump_p0_hand_strategy(rank1, rank2, suited, p0_strategy.hand_strategies[suited][rank1][rank2]);
+    }
+
+    printf("\n");
+  }
+}
+
+static void dump_p0_strategy2(LimitRootTwoHandHoleHandStrategies& player_strategies) {
+
+  printf("Player 0 - Small Blind - Strategy:\n\n");
+  
+  // Pocket pairs
+  bool suited = false;
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    dump_p0_hand_strategy2(rank, rank, suited, player_strategies.get_pocket_pair_value(rank));
+  }
+  
+  printf("\n\n");
+  
+  // Suited
+  suited = true;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      dump_p0_hand_strategy2(rank_hi, rank_lo, suited, player_strategies.get_suited_value(rank_hi, rank_lo));
+    }
+    printf("\n");
+  }
+
+  printf("\n\n");
+  
+  // Off-suit
+  suited = false;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      dump_p0_hand_strategy2(rank_hi, rank_lo, suited, player_strategies.get_offsuit_value(rank_hi, rank_lo));
+    }
+
+    printf("\n");
+  }
+}
+
+static void dump_p1_strategy2(LimitRootTwoHandHoleHandStrategies& player_strategies) {
+
+  printf("Player 0 - Small Blind - Strategy:\n\n");
+  
+  // Pocket pairs
+  bool suited = false;
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    dump_p1_hand_strategy2(rank, rank, suited, player_strategies.get_pocket_pair_value(rank));
+  }
+  printf("\n\n");
+  
+  // Suited
+  suited = true;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      dump_p1_hand_strategy2(rank_hi, rank_lo, suited, player_strategies.get_suited_value(rank_hi, rank_lo));
+    }
+    printf("\n");
+  }
+
+  printf("\n\n");
+  
+  // Off-suit
+  suited = false;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      dump_p1_hand_strategy2(rank_hi, rank_lo, suited, player_strategies.get_offsuit_value(rank_hi, rank_lo));
     }
 
     printf("\n");
@@ -889,6 +912,39 @@ static void dump_player_eval(bool is_p0, const HeadsUpPlayerPreflopEval& eval) {
       dump_hand_eval(is_p0, rank1, rank2, suited, eval.hand_evals[suited][rank1][rank2], total_activity, total_p0_profit, total_p1_profit);
     }
 
+    printf("\n");
+  }
+  printf("\nOverall outcome: %11.4lf p0 %11.4lf p1 %11.4lf p0-EV %6.4lf p1-EV %6.4lf\n", total_activity, total_p0_profit, total_p1_profit, total_p0_profit/total_activity, total_p1_profit/total_activity);
+}
+
+static void dump_player_eval2(bool is_p0, /*const*/ LimitRootTwoHandHoleHandEvals& player_evals) {
+  double total_activity = 0.0, total_p0_profit = 0.0, total_p1_profit = 0.0;
+  
+  // Pocket pairs
+  bool suited = false;
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    dump_hand_eval2(is_p0, rank, rank, suited, player_evals.get_pocket_pair_value(rank), total_activity, total_p0_profit, total_p1_profit);
+  }
+  
+  printf("\n\n");
+  
+  // Suited
+  suited = true;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      dump_hand_eval2(is_p0, rank_hi, rank_lo, suited, player_evals.get_suited_value(rank_hi, rank_lo), total_activity, total_p0_profit, total_p1_profit);
+    }
+    printf("\n");
+  }
+
+  printf("\n\n");
+  
+  // Off-suit
+  suited = false;
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      dump_hand_eval2(is_p0, rank_hi, rank_lo, suited, player_evals.get_offsuit_value(rank_hi, rank_lo), total_activity, total_p0_profit, total_p1_profit);
+    }
     printf("\n");
   }
   printf("\nOverall outcome: %11.4lf p0 %11.4lf p1 %11.4lf p0-EV %6.4lf p1-EV %6.4lf\n", total_activity, total_p0_profit, total_p1_profit, total_p0_profit/total_activity, total_p1_profit/total_activity);
@@ -1165,28 +1221,29 @@ static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrat
   delete ptr_p1_eval;
 }
 
-#ifdef NOOOOOOOOOOOO
+//#ifdef NOOOOOOOOOOOO
 
 static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHoleHandStrategies& player_strategies, Dealer::DealerT& dealer, int N_DEALS, double leeway) {
   if(false) {
     printf("Evaluating preflop strategies\n\n");
-    dump_p0_strategy(p0_strategy);
+    dump_p0_strategy2(player_strategies);
     printf("\n\n");
-    dump_p1_strategy(p1_strategy);
+    dump_p1_strategy2(player_strategies);
   }
 
-  HeadsUpPlayerPreflopEval* ptr_p0_eval = new HeadsUpPlayerPreflopEval();
-  HeadsUpPlayerPreflopEval* ptr_p1_eval = new HeadsUpPlayerPreflopEval();
-  HeadsUpPlayerPreflopEval& p0_eval = *ptr_p0_eval;
-  HeadsUpPlayerPreflopEval& p1_eval = *ptr_p1_eval;
+  // Allocate on the heap cos these are large.
+  LimitRootTwoHandHoleHandEvals* ptr_p0_eval = new LimitRootTwoHandHoleHandEvals();
+  LimitRootTwoHandHoleHandEvals* ptr_p1_eval = new LimitRootTwoHandHoleHandEvals();
+  LimitRootTwoHandHoleHandEvals& p0_eval = *ptr_p0_eval;
+  LimitRootTwoHandHoleHandEvals& p1_eval = *ptr_p1_eval;
 
   if(false) {
     // What is the initial state
     printf("Player 0 - Small Blind - initial state - should be all 0.0\n\n");
-    dump_player_eval(p0_eval);
+    dump_player_eval2(true, p0_eval);
     printf("\n\n");
     printf("Player 1 - Big Blind - initial state - should be all 0.0\n\n");
-    dump_player_eval(p1_eval);
+    dump_player_eval2(false, p1_eval);
     printf("\n\n");
   }
 
@@ -1226,13 +1283,16 @@ static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHole
     }
     
     HeadsUpWinner winner;
+    Poker::Gto::PlayerHandEvals<2> player_hand_evals = {};
     {
       auto flop = std::make_tuple(CardT(cards[2*2]), CardT(cards[2*2 + 1]), CardT(cards[2*2 + 2]));
       auto turn = CardT(cards[2*2 + 3]);
       auto river = CardT(cards[2*2 + 4]);
 
       auto p0_hand_eval = HandEval::eval_hand(p0_hole, flop, turn, river);
+      player_hand_evals.values[0] = p0_hand_eval;
       auto p1_hand_eval = HandEval::eval_hand(p1_hole, flop, turn, river);
+      player_hand_evals.values[1] = p1_hand_eval;
       
       if(p0_hand_eval > p1_hand_eval) {
 	winner = P0Wins;
@@ -1252,21 +1312,31 @@ static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHole
       }
     }
 
-    bool p0_is_suited = p0_hole_norm.first.suit == p0_hole_norm.second.suit;
-    RankT p0_rank1 = p0_hole_norm.first.rank == Ace ? AceLow : p0_hole_norm.first.rank;
-    RankT p0_rank2 = p0_hole_norm.second.rank == Ace ? AceLow : p0_hole_norm.second.rank;
+    Poker::Gto::PlayerStrategies<2, LimitRootTwoHandStrategy> player_hand_strategies = {};
+    Poker::Gto::PlayerEvals<2, LimitRootTwoHandEval> player_evals = {};
 
-    const HeadsUpP0HoleHandStrategy& p0_hand_strategy = p0_strategy.hand_strategies[p0_is_suited][p0_rank1][p0_rank2];
-    HeadsUpPlayerHoleHandEval& p0_hand_eval = p0_eval.hand_evals[p0_is_suited][p0_rank1][p0_rank2];
+    // bool p0_is_suited = p0_hole_norm.first.suit == p0_hole_norm.second.suit;
+    // RankT p0_rank1 = p0_hole_norm.first.rank == Ace ? AceLow : p0_hole_norm.first.rank;
+    // RankT p0_rank2 = p0_hole_norm.second.rank == Ace ? AceLow : p0_hole_norm.second.rank;
+
+    // const HeadsUpP0HoleHandStrategy& p0_hand_strategy = p0_strategy.hand_strategies[p0_is_suited][p0_rank1][p0_rank2];
+    // HeadsUpPlayerHoleHandEval& p0_hand_eval = p0_eval.hand_evals[p0_is_suited][p0_rank1][p0_rank2];
+
+    player_hand_strategies.strategies[0] = &player_strategies.get_value(p0_hole_norm.first, p0_hole_norm.second);
+    player_evals.evals[0] = &p0_eval.get_value(p0_hole_norm.first, p0_hole_norm.second);
     
-    bool p1_is_suited = p1_hole_norm.first.suit == p1_hole_norm.second.suit;
-    RankT p1_rank1 = p1_hole_norm.first.rank == Ace ? AceLow : p1_hole_norm.first.rank;
-    RankT p1_rank2 = p1_hole_norm.second.rank == Ace ? AceLow : p1_hole_norm.second.rank;
+    // bool p1_is_suited = p1_hole_norm.first.suit == p1_hole_norm.second.suit;
+    // RankT p1_rank1 = p1_hole_norm.first.rank == Ace ? AceLow : p1_hole_norm.first.rank;
+    // RankT p1_rank2 = p1_hole_norm.second.rank == Ace ? AceLow : p1_hole_norm.second.rank;
 
-    const HeadsUpP1HoleHandStrategy& p1_hand_strategy = p1_strategy.hand_strategies[p1_is_suited][p1_rank1][p1_rank2];
-    HeadsUpPlayerHoleHandEval& p1_hand_eval = p1_eval.hand_evals[p1_is_suited][p1_rank1][p1_rank2];
+    // const HeadsUpP1HoleHandStrategy& p1_hand_strategy = p1_strategy.hand_strategies[p1_is_suited][p1_rank1][p1_rank2];
+    // HeadsUpPlayerHoleHandEval& p1_hand_eval = p1_eval.hand_evals[p1_is_suited][p1_rank1][p1_rank2];
 
-    eval_heads_up_preflop_deal(p0_hand_strategy, p0_hand_eval, p1_hand_strategy, p1_hand_eval, winner);
+    player_hand_strategies.strategies[1] = &player_strategies.get_value(p1_hole_norm.first, p1_hole_norm.second);
+    player_evals.evals[1] = &p1_eval.get_value(p1_hole_norm.first, p1_hole_norm.second);
+
+    auto outcome = LimitRootTwoHandEval::evaluate_hand(1.0, player_evals, player_hand_strategies, player_hand_evals);
+    //eval_heads_up_preflop_deal(p0_hand_strategy, p0_hand_eval, p1_hand_strategy, p1_hand_eval, winner);
   }
 
   if(true) {
@@ -1275,10 +1345,10 @@ static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHole
     printf("   n_hands %d expecting %d - AA is %.4lf%% KK is %.4lf%%\n", n_hands, N_DEALS, (double)n_p0_aa/(double)n_hands * 100.0, (double)n_p0_kk/(double)n_hands * 100.0);
     // What is the outcome
     printf("Player 0 - Small Blind - outcomes\n\n");
-    dump_player_eval(p0_eval);
+    dump_player_eval2(true, p0_eval);
     printf("\n\n");
     printf("Player 1 - Big Blind - outcomes\n\n");
-    dump_player_eval(p1_eval);
+    dump_player_eval2(false, p1_eval);
     printf("\n\n");
   }
 
@@ -1290,7 +1360,7 @@ static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHole
   delete ptr_p1_eval;
 }
 
-#endif //NOOOOOOOOOOOO
+//#endif //NOOOOOOOOOOOO
 
 static void converge_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_strategy, HeadsUpP1PreflopStrategy& p1_strategy, Dealer::DealerT& dealer, int N_ROUNDS, int N_DEALS, int N_DEALS_INC, double leeway, double leeway_inc) {
   
@@ -1350,13 +1420,16 @@ static void converge_heads_up_preflop_strategies2(LimitRootTwoHandHoleHandStrate
 #endif //def NOOOOOOOOOOOO
 
 int main() {
-  int N_ROUNDS = 2000;
-  int N_DEALS = 10608/*52*51*4*/;
+  int N_ROUNDS = 10000;
+  //int N_DEALS = 10608/*52*51*4*/;
+  int N_DEALS = 16*10608/*52*51*4*/;
   // int N_ROUNDS = 1;
   // int N_DEALS = 1;
-  int N_DEALS_INC = 10608/*52*51*4*/ / 4;
+  // int N_DEALS_INC = 10608/*52*51*4*/ / 4;
+  // double leeway = 0.1;
+  int N_DEALS_INC = 0; // 10608/*52*51*4*/ / 4;
   double leeway = 0.1;
-  double leeway_inc = 0.025;
+  double leeway_inc = 0.001;
   
   std::seed_seq seed{1, 2, 3, 4, 6};
   Dealer::DealerT dealer(seed);

@@ -11,8 +11,10 @@ namespace Poker {
     // Fast hand eval - to come...
     extern HandValueT mkHandValue(const HandT hand);
 
+    typedef std::pair<HandRankingT, std::tuple<RankT, RankT, RankT, RankT, RankT>> HandEvalT;
+    
     // Slow hand eval.
-    extern std::pair<HandRankingT, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_hand(const std::pair<CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
+    extern HandEvalT eval_hand(const std::pair<CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
   }
 }
 

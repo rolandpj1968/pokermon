@@ -2,6 +2,7 @@
 #define GTO_COMMON
 
 #include "types.hpp"
+#include "hand-eval.hpp"
 
 namespace Poker {
   
@@ -218,7 +219,7 @@ namespace Poker {
 
     template <int N_PLAYERS, typename PlayerStrategyT>
     struct PlayerStrategies {
-      PlayerStrategyT strategies[N_PLAYERS];
+      PlayerStrategyT* strategies[N_PLAYERS];
 
       constexpr inline PlayerStrategyT& get_player_strategy(int player_no) const {
 	return *strategies[player_no];
@@ -287,7 +288,7 @@ namespace Poker {
     
     template <int N_PLAYERS, typename PlayerEvalT>
     struct PlayerEvals {
-      PlayerEvalT evals[N_PLAYERS];
+      PlayerEvalT* evals[N_PLAYERS];
 
       constexpr inline PlayerEvalT& get_player_eval(int player_no) const {
 	return *evals[player_no];
@@ -365,6 +366,15 @@ namespace Poker {
       HandRankingT rankings[N_PLAYERS];
     };
     
+    template <int N_PLAYERS>
+    struct PlayerHandValues {
+      HandValueT values[N_PLAYERS];
+    };
+    
+    template <int N_PLAYERS>
+    struct PlayerHandEvals {
+      HandEval::HandEvalT values[N_PLAYERS];
+    };
   } // namespace Gto
   
 } // namespace Poker
