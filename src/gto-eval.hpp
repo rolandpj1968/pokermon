@@ -497,9 +497,14 @@ namespace Poker {
       // rank0, rank1 in [0..13)
       static constexpr size_t get_non_pair_index(size_t rank0, size_t rank1) {
 	size_t total_size = 13*12/2;
-	size_t rank0_remaining = rank0*(rank0-1)/2;
+	size_t rank0_remaining = (rank0+1)*rank0/2;
 	size_t rank0_offset = total_size - rank0_remaining;
-			   
+
+	size_t index = rank0_offset + rank1;
+	if(index >= total_size) {
+	  printf("Boooooooooooooooooooooo get_non_pair_index(%zu, %zu) -> %zu limit is %zu\n", rank0, rank1, index, total_size);
+	}
+	
 	return rank0_offset + rank1;
       }
 

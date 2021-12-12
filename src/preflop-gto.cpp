@@ -1421,7 +1421,7 @@ static void converge_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_st
 
 //#ifdef NOOOOOOOOOOOO
 
-template <int N_PLAYERS, typename HandStrategyT>
+//template <int N_PLAYERS, typename HandStrategyT>
 static void converge_heads_up_preflop_strategies2(LimitRootTwoHandHoleHandStrategies& hole_hand_strategies, Dealer::DealerT& dealer, int N_ROUNDS, int N_DEALS, int N_DEALS_INC, double leeway, double leeway_inc) {
   
   for(int round = 0; round < N_ROUNDS; round++) {
@@ -1450,7 +1450,7 @@ static void converge_heads_up_preflop_strategies2(LimitRootTwoHandHoleHandStrate
 
 //#endif //def NOOOOOOOOOOOO
 
-int main() {
+int main1() {
   int N_ROUNDS = 10000;
   //int N_DEALS = 10608/*52*51*4*/;
   int N_DEALS = 16*10608/*52*51*4*/;
@@ -1488,25 +1488,25 @@ int main() {
 }
 
 
-int main2() {
-  // int N_ROUNDS = 2000;
-  // int N_DEALS = 10608/*52*51*4*/;
-  int N_ROUNDS = 1;
-  int N_DEALS = 1;
-  int N_DEALS_INC = 10608/*52*51*4*/ / 4;
+int main() {
+  int N_ROUNDS = 10000;
+  //int N_DEALS = 10608/*52*51*4*/;
+  int N_DEALS = 16*10608/*52*51*4*/;
+  // int N_ROUNDS = 1;
+  // int N_DEALS = 1;
+  // int N_DEALS_INC = 10608/*52*51*4*/ / 4;
+  // double leeway = 0.1;
+  int N_DEALS_INC = 0; // 10608/*52*51*4*/ / 4;
   double leeway = 0.1;
-  double leeway_inc = 0.025;
+  double leeway_inc = 0.001;
   
   std::seed_seq seed{1, 2, 3, 4, 6};
   Dealer::DealerT dealer(seed);
 
-  // Allocate on heap, not stack cos these are fairly large structures;
+  // Allocate on heap, not stack cos this is a fairly large structure
   LimitRootTwoHandHoleHandStrategies* hole_hand_strategies = new LimitRootTwoHandHoleHandStrategies();
   
-  HeadsUpP0PreflopStrategy* p0_strategy = new HeadsUpP0PreflopStrategy();
-  HeadsUpP1PreflopStrategy* p1_strategy = new HeadsUpP1PreflopStrategy();
-
-  converge_heads_up_preflop_strategies(*p0_strategy, *p1_strategy, dealer, N_ROUNDS, N_DEALS, N_DEALS_INC, leeway, leeway_inc);
+  converge_heads_up_preflop_strategies2(*hole_hand_strategies, dealer, N_ROUNDS, N_DEALS, N_DEALS_INC, leeway, leeway_inc);
 
   printf("\n\n");
   printf("==========================================================================================\n");
@@ -1515,12 +1515,9 @@ int main2() {
   printf("==============                                                             ===============\n");
   printf("==========================================================================================\n\n\n");;
 
-  dump_p0_strategy(*p0_strategy);
+  dump_p0_strategy2(*hole_hand_strategies);
   printf("\n\n");
-  dump_p1_strategy(*p1_strategy);
-
-  delete p0_strategy;
-  delete p1_strategy;
+  dump_p1_strategy2(*hole_hand_strategies);
 
   delete hole_hand_strategies;
 
