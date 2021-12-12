@@ -1098,6 +1098,36 @@ static void adjust_p1_strategy(HeadsUpP1PreflopStrategy& p1_strategy, const Head
   }
 }
 
+static void adjust_strategies2(LimitRootTwoHandStrategy& strategy, /*const*/ LimitRootTwoHandEval& p0_hand_eval, /*const*/ LimitRootTwoHandEval& p1_hand_eval, double leeway) {
+  Poker::Gto::PlayerEvals<2, LimitRootTwoHandEval> player_evals = {};
+  player_evals.evals[0] = &p0_hand_eval;
+  player_evals.evals[1] = &p1_hand_eval;
+
+  strategy.adjust(player_evals, leeway);
+}
+			       
+static void adjust_strategies2(LimitRootTwoHandHoleHandStrategies& player_strategies, /*const*/ LimitRootTwoHandHoleHandEvals& p0_eval, /*const*/ LimitRootTwoHandHoleHandEvals& p1_eval, double leeway) {
+
+  // Pocket pairs
+  for(RankT rank = Ace; rank > AceLow; rank = (RankT)(rank-1)) {
+    adjust_strategies2(player_strategies.get_pocket_pair_value(rank), p0_eval.get_pocket_pair_value(rank), p1_eval.get_pocket_pair_value(rank), leeway);
+  }
+  
+  // Suited
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      adjust_strategies2(player_strategies.get_offsuit_value(rank_hi, rank_lo), p0_eval.get_offsuit_value(rank_hi, rank_lo), p1_eval.get_offsuit_value(rank_hi, rank_lo), leeway);
+    }
+  }
+
+  // Off-suit
+  for(RankT rank_hi = Ace; rank_hi > AceLow; rank_hi = (RankT)(rank_hi-1)) {
+    for(RankT rank_lo = (RankT)(rank_hi-1); rank_lo > AceLow; rank_lo = (RankT)(rank_lo-1)) {
+      adjust_strategies2(player_strategies.get_suited_value(rank_hi, rank_lo), p0_eval.get_suited_value(rank_hi, rank_lo), p1_eval.get_suited_value(rank_hi, rank_lo), leeway);
+    }
+  }
+}
+
 static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrategy& p0_strategy, HeadsUpP1PreflopStrategy& p1_strategy, Dealer::DealerT& dealer, int N_DEALS, double leeway) {
   if(false) {
     printf("Evaluating preflop strategies\n\n");
@@ -1335,7 +1365,7 @@ static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHole
     player_hand_strategies.strategies[1] = &player_strategies.get_value(p1_hole_norm.first, p1_hole_norm.second);
     player_evals.evals[1] = &p1_eval.get_value(p1_hole_norm.first, p1_hole_norm.second);
 
-    auto outcome = LimitRootTwoHandEval::evaluate_hand(1.0, player_evals, player_hand_strategies, player_hand_evals);
+    LimitRootTwoHandEval::evaluate_hand(1.0, player_evals, player_hand_strategies, player_hand_evals);
     //eval_heads_up_preflop_deal(p0_hand_strategy, p0_hand_eval, p1_hand_strategy, p1_hand_eval, winner);
   }
 
@@ -1353,8 +1383,9 @@ static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHole
   }
 
   printf("Adjusting strategies...\n\n");
-  adjust_p0_strategy(p0_strategy, p0_eval, leeway);
-  adjust_p1_strategy(p1_strategy, p1_eval, leeway);
+  adjust_strategies2(player_strategies, p0_eval, p1_eval, leeway);
+  // adjust_p0_strategy2(p0_strategy, p0_eval, leeway);
+  // adjust_p1_strategy2(p1_strategy, p1_eval, leeway);
 
   delete ptr_p0_eval;
   delete ptr_p1_eval;
@@ -1388,7 +1419,7 @@ static void converge_heads_up_preflop_strategies(HeadsUpP0PreflopStrategy& p0_st
   }
 }
 
-#ifdef NOOOOOOOOOOOO
+//#ifdef NOOOOOOOOOOOO
 
 template <int N_PLAYERS, typename HandStrategyT>
 static void converge_heads_up_preflop_strategies2(LimitRootTwoHandHoleHandStrategies& hole_hand_strategies, Dealer::DealerT& dealer, int N_ROUNDS, int N_DEALS, int N_DEALS_INC, double leeway, double leeway_inc) {
@@ -1417,7 +1448,7 @@ static void converge_heads_up_preflop_strategies2(LimitRootTwoHandHoleHandStrate
   }
 }
 
-#endif //def NOOOOOOOOOOOO
+//#endif //def NOOOOOOOOOOOO
 
 int main() {
   int N_ROUNDS = 10000;

@@ -305,6 +305,26 @@ namespace Poker {
       static const bool can_raise = true;
       
       GtoStrategy</*CAN_RAISE*/true> strategy;
+
+      template <typename PlayerEvalT>
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) {
+	const PlayerEvalT& curr_player_eval = player_evals.get_player_eval(PLAYER_NO);
+
+	double rel_fold_profit = curr_player_eval.fold.eval.rel_player_profit(PLAYER_NO);
+	double rel_call_profit = curr_player_eval.call.eval.rel_player_profit(PLAYER_NO);
+	double rel_raise_profit = curr_player_eval.raise.eval.rel_player_profit(PLAYER_NO);
+
+	strategy.adjust(rel_fold_profit, rel_call_profit, rel_raise_profit, leeway);
+
+	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
+	this->fold.adjust(fold_evals, leeway);
+
+	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
+	this->call.adjust(call_evals, leeway);
+
+	auto raise_evals = PlayerEvalsRaiseGetter<N_PLAYERS, PlayerEvalT>::get_raise_evals(player_evals);
+	this->raise.adjust(raise_evals, leeway);
+      }
     };
     
     // Specialisation for one player left in the hand.
@@ -324,6 +344,9 @@ namespace Poker {
       : LimitHandNodeConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>
     {
       static const bool is_leaf = true;
+
+      template <typename PlayerEvalT>
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) { /*noop*/ }
     };
     
     // Specialisation for all active players called.
@@ -342,6 +365,9 @@ namespace Poker {
       : LimitHandNodeConsts<SMALL_BLIND, BIG_BLIND, N_PLAYERS, ACTIVE_BM, N_TO_CALL, PLAYER_NO, N_RAISES_LEFT, PLAYER_POTS>
     {
       static const bool is_leaf = true;
+
+      template <typename PlayerEvalT>
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) { /*noop*/ }
     };
     
     // Specialisation for current player already folded
@@ -373,6 +399,13 @@ namespace Poker {
 	> dead_t;
       
       dead_t _;
+
+      template <typename PlayerEvalT>
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) {
+	auto dead_evals = PlayerEvalsDeadGetter<N_PLAYERS, PlayerEvalT>::get_dead_evals(player_evals);
+	this->_.adjust(dead_evals, leeway);
+      }
+      
     };
     
     // Specialisation for when we're at maximum bet level.
@@ -397,6 +430,23 @@ namespace Poker {
       static const bool can_raise = false;
       
       GtoStrategy</*CAN_RAISE*/false> strategy;
+
+
+      template <typename PlayerEvalT>
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) {
+	const PlayerEvalT& curr_player_eval = player_evals.get_player_eval(PLAYER_NO);
+
+	double rel_fold_profit = curr_player_eval.fold.eval.rel_player_profit(PLAYER_NO);
+	double rel_call_profit = curr_player_eval.call.eval.rel_player_profit(PLAYER_NO);
+
+	strategy.adjust(rel_fold_profit, rel_call_profit, leeway);
+
+	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
+	this->fold.adjust(fold_evals, leeway);
+
+	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
+	this->call.adjust(call_evals, leeway);
+      }
     };
     
     template <

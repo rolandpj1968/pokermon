@@ -168,6 +168,10 @@ namespace Poker {
       // Sum over all hands of per-hand (product of) 'probability of reaching this node' times 'player outcome for the hand'.
       NodeEvalPerPlayerProfit<N_PLAYERS> player_profits;
 
+      inline double rel_player_profit(int player_no) const {
+	return activity == 0.0 ? 0.0 : player_profits.profits[player_no]/activity;
+      }
+      
       // Accumulate results of a hand eval at this node
       inline void accumulate(double hand_activity, const NodeEvalPerPlayerProfit<N_PLAYERS> hand_profits) {
 	activity += hand_activity;
