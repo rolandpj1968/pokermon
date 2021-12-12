@@ -92,8 +92,8 @@ namespace Poker {
         get_node_type(PLAYER_NO, ACTIVE_BM, N_TO_CALL, N_RAISES_LEFT)
       >
     {
-      template <typename PlayerEvalT, typename PlayerStrategyT>
-      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings);
+      // template <typename PlayerEvalT, typename PlayerStrategyT>
+      // static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandEvals<N_PLAYERS>& player_hand_evals);
     };
     
     // Child node of this eval tree node for current player folding
@@ -198,30 +198,30 @@ namespace Poker {
       NodeEval<N_PLAYERS> eval;
 
       template <typename PlayerEvalT, typename PlayerStrategyT>
-      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
+      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandEvals<N_PLAYERS>& player_hand_evals) {
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
 
 	const PlayerStrategyT& curr_player_strategy = player_strategies.get_player_strategy(PLAYER_NO);
 
-	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_evals(player_evals);
+	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
 	auto fold_strategies = PlayerStrategiesFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_strategies(player_strategies);
-	double fold_p = curr_player_strategy.fold_p;
+	double fold_p = curr_player_strategy.strategy.fold_p;
 	typedef typename PlayerEvalT::fold_t eval_fold_t;
-	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = eval_fold_t::evaluate_hand(node_prob*fold_p, fold_evals, fold_strategies, player_rankings);
+	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = eval_fold_t::evaluate_hand(node_prob*fold_p, fold_evals, fold_strategies, player_hand_evals);
 	player_profits.accumulate(fold_p, fold_profits);
 
-	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_evals(player_evals);
+	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
 	auto call_strategies = PlayerStrategiesCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_strategies(player_strategies);
-	double call_p = curr_player_strategy.call_p;
+	double call_p = curr_player_strategy.strategy.call_p;
 	typedef typename PlayerEvalT::call_t eval_call_t;
-	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = eval_call_t::evaluate_hand(node_prob*call_p, call_evals, call_strategies, player_rankings);
+	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = eval_call_t::evaluate_hand(node_prob*call_p, call_evals, call_strategies, player_hand_evals);
 	player_profits.accumulate(call_p, call_profits);
 
-	auto raise_evals = PlayerEvalsRaiseGetter<N_PLAYERS, PlayerStrategyT>::get_raise_evals(player_evals);
+	auto raise_evals = PlayerEvalsRaiseGetter<N_PLAYERS, PlayerEvalT>::get_raise_evals(player_evals);
 	auto raise_strategies = PlayerStrategiesRaiseGetter<N_PLAYERS, PlayerStrategyT>::get_raise_strategies(player_strategies);
-	double raise_p = curr_player_strategy.raise_p;
+	double raise_p = curr_player_strategy.strategy.raise_p;
 	typedef typename PlayerEvalT::raise_t eval_raise_t;
-	NodeEvalPerPlayerProfit<N_PLAYERS> raise_profits = eval_raise_t::evaluate_hand(node_prob*raise_p, raise_evals, raise_strategies, player_rankings);
+	NodeEvalPerPlayerProfit<N_PLAYERS> raise_profits = eval_raise_t::evaluate_hand(node_prob*raise_p, raise_evals, raise_strategies, player_hand_evals);
 	player_profits.accumulate(raise_p, raise_profits);
 
 	player_evals.accumulate(node_prob, player_profits);
@@ -252,7 +252,7 @@ namespace Poker {
       NodeEval<N_PLAYERS> eval;
 
       template <typename PlayerEvalT, typename PlayerStrategyT>
-      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
+      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandEvals<N_PLAYERS>& player_hand_evals) {
 	// The single player remaining takes the pot.
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = make_player_profits_for_one_winner<N_PLAYERS>(ACTIVE_BM, PLAYER_POTS);
 	
@@ -264,16 +264,16 @@ namespace Poker {
     };
 
     template <int N_PLAYERS>
-    inline u8 get_active_winners_bm(u8 active_bm_u8, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
+    inline u8 get_active_winners_bm(u8 active_bm_u8, const PlayerHandEvals<N_PLAYERS>& player_hand_evals) {
       bool have_active = false;
       u8 active_winners_bm_u8 = 0;
-      HandRankingT winners_ranking;
+      HandEval::HandEvalT winners_eval;
 
       for(int n = 0; n < N_PLAYERS; n++) {
-	const HandRankingT curr_player_ranking = player_rankings.rankings[n];
+	const HandEval::HandEvalT curr_player_eval = player_hand_evals.evals[n];
 
 	// Ignore inactive (folded) players.
-	if(!get_is_active(n, active_bm_u8_mask)) {
+	if(!get_is_active(n, active_bm_u8)) {
 	  continue;
 	}
 
@@ -282,23 +282,23 @@ namespace Poker {
 	  have_active = true;
 
 	  active_winners_bm_u8 = active_bm_u8_mask(n);
-	  winners_ranking = curr_player_ranking;
+	  winners_eval = curr_player_eval;
 
 	  continue;
 	}
 
 	// Most common case - current hand is not the best
-	if(curr_player_ranking < winners_ranking) {
+	if(curr_player_eval < winners_eval) {
 	  continue;
 	}
 
-	if(curr_player_ranking == winners_ranking) {
+	if(curr_player_eval == winners_eval) {
 	  // Tie with the winners - add current player to winners bm
 	  active_winners_bm_u8 |= active_bm_u8_mask(n);
 	} else {
 	  // New solo winner
 	  active_winners_bm_u8 = active_bm_u8_mask(n);
-	  winners_ranking = curr_player_ranking;
+	  winners_eval = curr_player_eval;
 	}
       }
 
@@ -307,11 +307,11 @@ namespace Poker {
     
     // Only valid if active_bm_u8 has at least one bit set
     template <int N_PLAYERS>
-    inline NodeEvalPerPlayerProfit<N_PLAYERS> make_player_profits_for_showdown(u8 active_bm_u8, u64 player_pots_u64, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
+    inline NodeEvalPerPlayerProfit<N_PLAYERS> make_player_profits_for_showdown(u8 active_bm_u8, u64 player_pots_u64, const PlayerHandEvals<N_PLAYERS>& player_hand_evals) {
       PlayerPots<N_PLAYERS> player_pots = make_player_pots<N_PLAYERS>(player_pots_u64);
       int total_pot = player_pots.get_total_pot();
 
-      u8 winners_bm_u8 = get_active_winners_bm<N_PLAYERS>(active_bm_u8, player_rankings);
+      u8 winners_bm_u8 = get_active_winners_bm<N_PLAYERS>(active_bm_u8, player_hand_evals);
 
       // First pass - accumulate the winners' total pots
       int winners_total_pot = 0;
@@ -358,9 +358,9 @@ namespace Poker {
       NodeEval<N_PLAYERS> eval;
 
       template <typename PlayerEvalT, typename PlayerStrategyT>
-      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
+      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandEvals<N_PLAYERS>& player_hand_evals) {
 	// The active top-ranked players share the pot
-	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = make_player_profits_for_showdown<N_PLAYERS>(ACTIVE_BM, PLAYER_POTS, player_rankings);
+	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = make_player_profits_for_showdown<N_PLAYERS>(ACTIVE_BM, PLAYER_POTS, player_hand_evals);
 	
 	player_evals.accumulate(node_prob, player_profits);
 
@@ -400,12 +400,12 @@ namespace Poker {
       dead_t _;
 
       template <typename PlayerEvalT, typename PlayerStrategyT>
-      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
-	auto dead_evals = PlayerEvalsDeadGetter<N_PLAYERS, PlayerStrategyT>::get_dead_evals(player_evals);
+      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandEvals<N_PLAYERS>& player_hand_evals) {
+	auto dead_evals = PlayerEvalsDeadGetter<N_PLAYERS, PlayerEvalT>::get_dead_evals(player_evals);
 	auto dead_strategies = PlayerStrategiesDeadGetter<N_PLAYERS, PlayerStrategyT>::get_dead_strategies(player_strategies);
 	typedef typename PlayerEvalT::dead_t eval_dead_t;
 	
-	return eval_dead_t::evaluate_hand(node_prob, dead_evals, dead_strategies, player_rankings);
+	return eval_dead_t::evaluate_hand(node_prob, dead_evals, dead_strategies, player_hand_evals);
       }
     
     };
@@ -434,23 +434,23 @@ namespace Poker {
       NodeEval<N_PLAYERS> eval;
 
       template <typename PlayerEvalT, typename PlayerStrategyT>
-      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, const PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandRankings<N_PLAYERS>& player_rankings) {
+      static inline NodeEvalPerPlayerProfit<N_PLAYERS> evaluate_hand(double node_prob, PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const PlayerStrategies<N_PLAYERS, PlayerStrategyT>& player_strategies, const PlayerHandEvals<N_PLAYERS>& player_hand_evals) {
 	NodeEvalPerPlayerProfit<N_PLAYERS> player_profits = {};
 
 	const PlayerStrategyT& curr_player_strategy = player_strategies.get_player_strategy(PLAYER_NO);
 
-	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_evals(player_evals);
+	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
 	auto fold_strategies = PlayerStrategiesFoldGetter<N_PLAYERS, PlayerStrategyT>::get_fold_strategies(player_strategies);
-	double fold_p = curr_player_strategy.fold_p;
+	double fold_p = curr_player_strategy.strategy.fold_p;
 	typedef typename PlayerEvalT::fold_t eval_fold_t;
-	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = eval_fold_t::evaluate_hand(node_prob*fold_p, fold_evals, fold_strategies, player_rankings);
+	NodeEvalPerPlayerProfit<N_PLAYERS> fold_profits = eval_fold_t::evaluate_hand(node_prob*fold_p, fold_evals, fold_strategies, player_hand_evals);
 	player_profits.accumulate(fold_p, fold_profits);
 
-	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_evals(player_evals);
+	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
 	auto call_strategies = PlayerStrategiesCallGetter<N_PLAYERS, PlayerStrategyT>::get_call_strategies(player_strategies);
-	double call_p = curr_player_strategy.call_p;
+	double call_p = curr_player_strategy.strategy.call_p;
 	typedef typename PlayerEvalT::call_t eval_call_t;
-	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = eval_call_t::evaluate_hand(node_prob*call_p, call_evals, call_strategies, player_rankings);
+	NodeEvalPerPlayerProfit<N_PLAYERS> call_profits = eval_call_t::evaluate_hand(node_prob*call_p, call_evals, call_strategies, player_hand_evals);
 	player_profits.accumulate(call_p, call_profits);
 
 	player_evals.accumulate(node_prob, player_profits);

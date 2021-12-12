@@ -373,7 +373,7 @@ namespace Poker {
     
     template <int N_PLAYERS>
     struct PlayerHandEvals {
-      HandEval::HandEvalT values[N_PLAYERS];
+      HandEval::HandEvalT evals[N_PLAYERS];
     };
   } // namespace Gto
   

@@ -1290,9 +1290,9 @@ static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHole
       auto river = CardT(cards[2*2 + 4]);
 
       auto p0_hand_eval = HandEval::eval_hand(p0_hole, flop, turn, river);
-      player_hand_evals.values[0] = p0_hand_eval;
+      player_hand_evals.evals[0] = p0_hand_eval;
       auto p1_hand_eval = HandEval::eval_hand(p1_hole, flop, turn, river);
-      player_hand_evals.values[1] = p1_hand_eval;
+      player_hand_evals.evals[1] = p1_hand_eval;
       
       if(p0_hand_eval > p1_hand_eval) {
 	winner = P0Wins;
