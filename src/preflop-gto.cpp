@@ -718,7 +718,7 @@ static void dump_p0_strategy2(LimitRootTwoHandHoleHandStrategies& player_strateg
 
 static void dump_p1_strategy2(LimitRootTwoHandHoleHandStrategies& player_strategies) {
 
-  printf("Player 0 - Small Blind - Strategy:\n\n");
+  printf("Player 1 - Big Blind - Strategy:\n\n");
   
   // Pocket pairs
   bool suited = false;
@@ -1254,7 +1254,7 @@ static void converge_heads_up_preflop_strategies_one_round(HeadsUpP0PreflopStrat
 //#ifdef NOOOOOOOOOOOO
 
 static void converge_heads_up_preflop_strategies_one_round2(LimitRootTwoHandHoleHandStrategies& player_strategies, Dealer::DealerT& dealer, int N_DEALS, double leeway) {
-  if(false) {
+  if(true) {
     printf("Evaluating preflop strategies\n\n");
     dump_p0_strategy2(player_strategies);
     printf("\n\n");

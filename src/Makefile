@@ -1,6 +1,6 @@
 preflop-gto: preflop-gto.cpp dealer.hpp types.hpp hand-eval.hpp hand-eval.cpp normal.hpp gto-common.hpp gto-eval.hpp gto-strategy.hpp Makefile
-	#g++ -Wall -O3 -o preflop-gto preflop-gto.cpp hand-eval.cpp
-	g++ -Wall -g -o preflop-gto preflop-gto.cpp hand-eval.cpp
+	g++ -Wall -O3 -o preflop-gto preflop-gto.cpp hand-eval.cpp
+	#g++ -Wall -g -o preflop-gto preflop-gto.cpp hand-eval.cpp
 
 dealer: dealer.cpp dealer.hpp types.hpp hand-eval.hpp hand-eval.cpp Makefile
 	g++ -O3 -o dealer dealer.cpp hand-eval.cpp
