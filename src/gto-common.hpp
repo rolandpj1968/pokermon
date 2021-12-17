@@ -169,7 +169,8 @@ namespace Poker {
       NodeEvalPerPlayerProfit<N_PLAYERS> player_profits;
 
       inline double rel_player_profit(int player_no) const {
-	return activity == 0.0 ? 0.0 : player_profits.profits[player_no]/activity;
+	// Note this returns NaN (0.0/0.0) if there is no activity.
+	return player_profits.profits[player_no]/activity;
       }
       
       // Accumulate results of a hand eval at this node

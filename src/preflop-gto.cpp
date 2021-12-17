@@ -1491,14 +1491,17 @@ int main1() {
 int main() {
   int N_ROUNDS = 10000;
   //int N_DEALS = 10608/*52*51*4*/;
-  int N_DEALS = 16*10608/*52*51*4*/;
+  int N_DEALS = 2*3*5*7*11;
+  //int N_DEALS = 16*10608/*52*51*4*/;
   // int N_ROUNDS = 1;
   // int N_DEALS = 1;
   // int N_DEALS_INC = 10608/*52*51*4*/ / 4;
   // double leeway = 0.1;
-  int N_DEALS_INC = 0; // 10608/*52*51*4*/ / 4;
+  //int N_DEALS_INC = 0; // 10608/*52*51*4*/ / 4;
+  //int N_DEALS_INC = 128; ///*52*51*4*/ / 8;
+  int N_DEALS_INC = 13;
   double leeway = 0.1;
-  double leeway_inc = 0.001;
+  double leeway_inc = 0.0001;
   
   std::seed_seq seed{1, 2, 3, 4, 6};
   Dealer::DealerT dealer(seed);

@@ -4,6 +4,8 @@
 #include "gto-common.hpp"
 #include "types.hpp"
 
+#include <cmath>
+
 namespace Poker {
   
   namespace Gto {
@@ -54,6 +56,13 @@ namespace Poker {
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
       void adjust(double fold_profit, double call_profit, double raise_profit, double leeway) {
+	
+	// We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
+	// If there's no coverage we don't have any data for adjustment so just bail.
+	if(std::isnan(fold_profit) || std::isnan(call_profit) || std::isnan(raise_profit)) {
+	  return;
+	}
+	
 	// Normalise profits to be 0-based.
 	double min_profit = std::min(fold_profit, std::min(call_profit, raise_profit));
 	// All positive...
@@ -95,6 +104,13 @@ namespace Poker {
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
       void adjust(double fold_profit, double call_profit, double leeway) {
+	
+	// We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
+	// If there's no coverage we don't have any data for adjustment so just bail.
+	if(std::isnan(fold_profit) || std::isnan(call_profit)) {
+	  return;
+	}
+	
 	// Normalise profits to be 0-based.
 	double min_profit = std::min(fold_profit, call_profit);
 	// All positive...
