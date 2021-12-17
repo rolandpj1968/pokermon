@@ -10,16 +10,22 @@ namespace Poker {
   
   namespace Gto {
 
-    // Clamp minimum strategy probability in order to avoid underflow deep in the tree.
-    // This should (tm) have minimal impact on final outcome.
-    static const double MIN_STRATEGY = 0.000001;
+    // When adjusting strategies, how do we treat very small strategy values?
+    enum StrategyClampT { NoClamp, ClampToMin, ClampToZero };
+    
+    // Configuration options for adjusting strategy values.
+    struct StrategyAdjustPolicyT {
+      double leeway;
+      double min_strategy;
+      StrategyClampT strategy_clamp;
+    };
 
     // Clamp a value to MIN_STRATEGY by stealing from the max value
-    static inline void clamp_to_min(double& p, double& max_p) {
-      if(p < MIN_STRATEGY) {
-	double diff = MIN_STRATEGY - p;
+    static inline void clamp_to_min(double& p, double& max_p, double min_strategy) {
+      if(p < min_strategy) {
+	double diff = min_strategy - p;
 	max_p -= diff;
-	p = MIN_STRATEGY;
+	p = min_strategy;
       }
     }
     
@@ -55,7 +61,7 @@ namespace Poker {
       //   penalise the less profitable options.
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
-      void adjust(double fold_profit, double call_profit, double raise_profit, double leeway) {
+      void adjust(double fold_profit, double call_profit, double raise_profit, const StrategyAdjustPolicyT& policy) {
 	
 	// We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
 	// If there's no coverage we don't have any data for adjustment so just bail.
@@ -72,7 +78,7 @@ namespace Poker {
 	normalise_to_unit_sum(fold_profit, call_profit, raise_profit);
 	
 	// Give some leeway
-	fold_profit += leeway; call_profit += leeway; raise_profit += leeway;
+	fold_profit += policy.leeway; call_profit += policy.leeway; raise_profit += policy.leeway;
 	
 	// Adjust strategies...
 	fold_p *= fold_profit; call_p *= call_profit; raise_p *= raise_profit;
@@ -80,10 +86,18 @@ namespace Poker {
 	// Strategies must sum to 1.0
 	normalise_to_unit_sum(fold_p, call_p, raise_p);
 	
-	// Clamp minimum probability
+	// Find the maximum strategy so we can adjust it against the clamped small values
 	double& fold_call_max_p = fold_p > call_p ? fold_p : call_p;
 	double& max_p = fold_call_max_p > raise_p ? fold_call_max_p : raise_p;
-	clamp_to_min(fold_p, max_p); clamp_to_min(call_p, max_p); clamp_to_min(raise_p, max_p);
+
+	// Apply clamping policy
+	if(policy.strategy_clamp == ClampToMin) {
+	  clamp_to_min(fold_p, max_p, policy.min_strategy);
+	  clamp_to_min(call_p, max_p, policy.min_strategy);
+	  clamp_to_min(raise_p, max_p, policy.min_strategy);
+	} else if(policy.strategy_clamp == ClampToZero) {
+	  // TODO
+	}
       }
       
     }; // struct GtoStrategy</*CAN_RAISE*/true>
@@ -103,7 +117,7 @@ namespace Poker {
       //   penalise the less profitable options.
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
-      void adjust(double fold_profit, double call_profit, double leeway) {
+      void adjust(double fold_profit, double call_profit, const StrategyAdjustPolicyT& policy) {
 	
 	// We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
 	// If there's no coverage we don't have any data for adjustment so just bail.
@@ -120,7 +134,7 @@ namespace Poker {
 	normalise_to_unit_sum(fold_profit, call_profit);
 	
 	// Give some leeway
-	fold_profit += leeway; call_profit += leeway;
+	fold_profit += policy.leeway; call_profit += policy.leeway;
 	
 	// Adjust strategies...
 	fold_p *= fold_profit; call_p *= call_profit;
@@ -128,9 +142,16 @@ namespace Poker {
 	// Strategies must sum to 1.0
 	normalise_to_unit_sum(fold_p, call_p);
 	
-	// Clamp minimum probability
+	// Find the maximum strategy so we can adjust it against the clamped small values
 	double& max_p = fold_p > call_p ? fold_p : call_p;
-	clamp_to_min(fold_p, max_p); clamp_to_min(call_p, max_p);
+	
+	// Apply clamping policy
+	if(policy.strategy_clamp == ClampToMin) {
+	  clamp_to_min(fold_p, max_p, policy.min_strategy);
+	  clamp_to_min(call_p, max_p, policy.min_strategy);
+	} else if(policy.strategy_clamp == ClampToZero) {
+	  // TODO
+	}
       }
 
     }; // struct GtoStrategy</*CAN_RAISE*/false>
@@ -323,23 +344,23 @@ namespace Poker {
       GtoStrategy</*CAN_RAISE*/true> strategy;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) {
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) {
 	const PlayerEvalT& curr_player_eval = player_evals.get_player_eval(PLAYER_NO);
 
 	double rel_fold_profit = curr_player_eval.fold.eval.rel_player_profit(PLAYER_NO);
 	double rel_call_profit = curr_player_eval.call.eval.rel_player_profit(PLAYER_NO);
 	double rel_raise_profit = curr_player_eval.raise.eval.rel_player_profit(PLAYER_NO);
 
-	strategy.adjust(rel_fold_profit, rel_call_profit, rel_raise_profit, leeway);
+	strategy.adjust(rel_fold_profit, rel_call_profit, rel_raise_profit, policy);
 
 	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
-	this->fold.adjust(fold_evals, leeway);
+	this->fold.adjust(fold_evals, policy);
 
 	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
-	this->call.adjust(call_evals, leeway);
+	this->call.adjust(call_evals, policy);
 
 	auto raise_evals = PlayerEvalsRaiseGetter<N_PLAYERS, PlayerEvalT>::get_raise_evals(player_evals);
-	this->raise.adjust(raise_evals, leeway);
+	this->raise.adjust(raise_evals, policy);
       }
     };
     
@@ -362,7 +383,7 @@ namespace Poker {
       static const bool is_leaf = true;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) { /*noop*/ }
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) { /*noop*/ }
     };
     
     // Specialisation for all active players called.
@@ -383,7 +404,7 @@ namespace Poker {
       static const bool is_leaf = true;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) { /*noop*/ }
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) { /*noop*/ }
     };
     
     // Specialisation for current player already folded
@@ -417,9 +438,9 @@ namespace Poker {
       dead_t _;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) {
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) {
 	auto dead_evals = PlayerEvalsDeadGetter<N_PLAYERS, PlayerEvalT>::get_dead_evals(player_evals);
-	this->_.adjust(dead_evals, leeway);
+	this->_.adjust(dead_evals, policy);
       }
       
     };
@@ -449,19 +470,19 @@ namespace Poker {
 
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, double leeway) {
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) {
 	const PlayerEvalT& curr_player_eval = player_evals.get_player_eval(PLAYER_NO);
 
 	double rel_fold_profit = curr_player_eval.fold.eval.rel_player_profit(PLAYER_NO);
 	double rel_call_profit = curr_player_eval.call.eval.rel_player_profit(PLAYER_NO);
 
-	strategy.adjust(rel_fold_profit, rel_call_profit, leeway);
+	strategy.adjust(rel_fold_profit, rel_call_profit, policy);
 
 	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
-	this->fold.adjust(fold_evals, leeway);
+	this->fold.adjust(fold_evals, policy);
 
 	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
-	this->call.adjust(call_evals, leeway);
+	this->call.adjust(call_evals, policy);
       }
     };
     
