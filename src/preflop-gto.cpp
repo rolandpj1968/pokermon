@@ -240,7 +240,6 @@ struct ConvergeOneRoundConfig {
   StrategyClampT strategy_clamp;
 };
 
-//static void converge_heads_up_preflop_strategies_one_round(LimitRootTwoHandHoleHandStrategies& player_strategies, Dealer::DealerT& dealer, int N_DEALS, double leeway, bool do_dump) {
 static void converge_heads_up_preflop_strategies_one_round(LimitRootTwoHandHoleHandStrategies& player_strategies, const ConvergeOneRoundConfig& config) {
   if(false && config.do_dump) {
     printf("Evaluating preflop strategies\n\n");
@@ -370,12 +369,11 @@ struct ConvergeConfig {
   int n_deals_inc;
   double leeway;
   double leeway_inc;
+  double min_strategy;
+  StrategyClampT clamp_policy;
+  int clamp_to_min_n_rounds = 64; // Only if clamp_policy is ClampToZero
   int dump_n_rounds; // Dump output only every dump_n_rounds rounds
 };
-
-// Clamp minimum strategy probability in order to avoid underflow deep in the tree.
-// This should (tm) have minimal impact on final outcome.
-static const double MIN_STRATEGY = 0.000001;
 
 //template <int N_PLAYERS, typename HandStrategyT>
 static void converge_heads_up_preflop_strategies(LimitRootTwoHandHoleHandStrategies& hole_hand_strategies, const ConvergeConfig& config) {
@@ -402,7 +400,11 @@ static void converge_heads_up_preflop_strategies(LimitRootTwoHandHoleHandStrateg
     
     printf("\n\nEvaluating and adjusting...\n\n");
 
-    const ConvergeOneRoundConfig one_round_config = { config.dealer, n_deals, do_dump, leeway, MIN_STRATEGY, ClampToMin };
+    StrategyClampT clamp_policy = config.clamp_policy;
+    if(clamp_policy == ClampToZero && config.clamp_to_min_n_rounds != 0 && round % config.clamp_to_min_n_rounds == 0) {
+      clamp_policy = ClampToMin;
+    }
+    const ConvergeOneRoundConfig one_round_config = { config.dealer, n_deals, do_dump, leeway, config.min_strategy, clamp_policy };
     converge_heads_up_preflop_strategies_one_round(hole_hand_strategies, one_round_config);
     
     printf("\n\n... finished evaluation and adjustment\n\n");
@@ -414,6 +416,7 @@ static void converge_heads_up_preflop_strategies(LimitRootTwoHandHoleHandStrateg
 
 int main() {
   int N_ROUNDS = 10000;
+  //int N_ROUNDS = 1000;
   //int N_DEALS = 10608/*52*51*4*/;
   int N_DEALS = 2*3*5*7*11;
   //int N_DEALS = 16*10608/*52*51*4*/;
@@ -426,7 +429,10 @@ int main() {
   int N_DEALS_INC = 13;
   double leeway = 0.1;
   double leeway_inc = 0.0001;
+  double min_strategy = 0.000000001;
   int dump_n_rounds = 16;
+  StrategyClampT clamp_policy = ClampToZero;
+  int clamp_to_min_n_rounds = 64; // only if clamp_policy is ClampToZero
   
   std::seed_seq seed{1, 2, 3, 4, 6};
   Dealer::DealerT dealer(seed);
@@ -434,9 +440,18 @@ int main() {
   // Allocate on heap, not stack cos this is a fairly large structure
   LimitRootTwoHandHoleHandStrategies* hole_hand_strategies = new LimitRootTwoHandHoleHandStrategies();
 
-  const ConvergeConfig config = { dealer, N_ROUNDS, N_DEALS, N_DEALS_INC, leeway, leeway_inc, dump_n_rounds };
-  
+  const ConvergeConfig config = { dealer, N_ROUNDS, N_DEALS, N_DEALS_INC, leeway, leeway_inc, min_strategy, clamp_policy, clamp_to_min_n_rounds, dump_n_rounds };
+
   converge_heads_up_preflop_strategies(*hole_hand_strategies, config);
+
+  //
+  // Do two last rounds to get decent data:
+  //   1. Round one with ClampToMin
+  //   2. Round two with ClampToZero
+  // From round 2 we get decent eval EV's even for 0.0 probability choices
+  //
+  // TODO
+  //
 
   printf("\n\n");
   printf("==========================================================================================\n");

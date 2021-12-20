@@ -20,7 +20,7 @@ namespace Poker {
       StrategyClampT strategy_clamp;
     };
 
-    // Clamp a value to MIN_STRATEGY by stealing from the max value
+    // Clamp a  (small) strategy probability to min_strategy by stealing from the max value
     static inline void clamp_to_min(double& p, double& max_p, double min_strategy) {
       if(p < min_strategy) {
 	double diff = min_strategy - p;
@@ -29,18 +29,141 @@ namespace Poker {
       }
     }
     
+    // Clamp a (small) strategy probability to 0.0 by donating to the max value.
+    // We do this to ignore clearly useless strategies, which improves efficiency.
+    static inline void clamp_to_zero(double& p, double& max_p, double min_strategy) {
+      if(p < min_strategy) {
+	max_p += p;
+	p = 0.0;
+      }
+    }
+    
+    // Normalise values to sum to the given total
+    static inline void normalise_to_total(double& fold_v, double& call_v, double& raise_v, double total) {
+      double sum_vs = fold_v + call_v + raise_v;
+      double norm = sum_vs/total;
+      fold_v /= norm; call_v /= norm; raise_v /= norm;
+    }
+
     // Normalise values to sum to 1.0
     static inline void normalise_to_unit_sum(double& fold_v, double& call_v, double& raise_v) {
-      double sum_vs = fold_v + call_v + raise_v;
-      fold_v /= sum_vs; call_v /= sum_vs; raise_v /= sum_vs;
+      normalise_to_total(fold_v, call_v, raise_v, 1.0);
     }
 
-    // Normalise values to sum to 1.0
-    static inline void normalise_to_unit_sum(double& fold_v, double& call_v) {
+    // Normalise values to sum to the given total
+    static inline void normalise_to_total(double& fold_v, double& call_v, double total) {
       double sum_vs = fold_v + call_v;
-      fold_v /= sum_vs; call_v /= sum_vs;
+      double norm = sum_vs/total;
+      fold_v /= norm; call_v /= norm;
     }
 
+    // Normalise values to sum to the given total
+    static inline void normalise_to_unit_sum(double& fold_v, double& call_v) {
+      normalise_to_total(fold_v, call_v, 1.0);
+    }
+    
+    // Adjust strategy according to empirical outcomes - reward the more profitable options and
+    //   penalise the less profitable options.
+    // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
+    //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
+    void adjust_strategy(double fold_profit, double call_profit, double& fold_p, double& call_p, const StrategyAdjustPolicyT& policy) {
+      
+      // We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
+      // If there's no coverage we don't have any data for adjustment so just bail.
+      if(std::isnan(fold_profit) || std::isnan(call_profit)) {
+	return;
+      }
+      
+      // In this case total_p might not be 1.0 in case we get here from the fold/call/raise path
+      //   where one of them is NaN.
+      double total_p = fold_p + call_p;
+      
+      // Normalise profits to be 0-based.
+      double min_profit = std::min(fold_profit, call_profit);
+      // All positive...
+      fold_profit -= min_profit; call_profit -= min_profit;
+      
+      // Normalise profits to sum to 1.0
+      normalise_to_unit_sum(fold_profit, call_profit);
+      
+      // Give some leeway
+      fold_profit += policy.leeway; call_profit += policy.leeway;
+      
+      // Adjust strategies...
+      fold_p *= fold_profit; call_p *= call_profit;
+      
+      // Strategies must sum to same total as before
+      normalise_to_total(fold_p, call_p, total_p);
+      
+      // Find the maximum strategy so we can adjust it against the clamped small values
+      double& max_p = fold_p > call_p ? fold_p : call_p;
+      
+      // Apply clamping policy
+      if(policy.strategy_clamp == ClampToMin) {
+	clamp_to_min(fold_p, max_p, policy.min_strategy);
+	clamp_to_min(call_p, max_p, policy.min_strategy);
+      } else if(policy.strategy_clamp == ClampToZero) {
+	clamp_to_zero(fold_p, max_p, policy.min_strategy);
+	clamp_to_zero(call_p, max_p, policy.min_strategy);
+      }
+    }
+    
+    // Adjust strategy according to empirical outcomes - reward the more profitable options and
+    //   penalise the less profitable options.
+    // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
+    //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
+    void adjust_strategy(double fold_profit, double call_profit, double raise_profit, double& fold_p, double& call_p, double& raise_p, const StrategyAdjustPolicyT& policy) {
+      
+      // We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
+      // If there's no coverage of one of the paths (e.g. p = 0.0), we need to adjust the
+      //   other two paths, otherwise we get stuck.
+      if(std::isnan(fold_profit)) {
+	adjust_strategy(call_profit, raise_profit, call_p, raise_p, policy);
+	return;
+      } else if(std::isnan(call_profit)) {
+	adjust_strategy(fold_profit, raise_profit, fold_p, raise_p, policy);
+	return;
+      } else if(std::isnan(raise_profit)) {
+	adjust_strategy(fold_profit, call_profit, fold_p, call_p, policy);
+	return;
+      }
+      
+      // In this case total_p MUST sum to 1.0
+      double total_p = fold_p + call_p + raise_p;
+      
+      // Normalise profits to be 0-based.
+      double min_profit = std::min(fold_profit, std::min(call_profit, raise_profit));
+      // All positive...
+      fold_profit -= min_profit; call_profit -= min_profit; raise_profit -= min_profit;
+      
+      // Normalise profits to sum to 1.0
+      normalise_to_unit_sum(fold_profit, call_profit, raise_profit);
+      
+      // Give some leeway
+      fold_profit += policy.leeway; call_profit += policy.leeway; raise_profit += policy.leeway;
+      
+      // Adjust strategies...
+      fold_p *= fold_profit; call_p *= call_profit; raise_p *= raise_profit;
+      
+      // Strategies must sum to the same total as before adjustment - always 1.0 in this case
+      normalise_to_total(fold_p, call_p, raise_p, total_p);
+      
+      // Find the maximum strategy so we can adjust it against the clamped small values
+      double& fold_call_max_p = fold_p > call_p ? fold_p : call_p;
+      double& max_p = fold_call_max_p > raise_p ? fold_call_max_p : raise_p;
+      
+      // Apply clamping policy
+      if(policy.strategy_clamp == ClampToMin) {
+	clamp_to_min(fold_p, max_p, policy.min_strategy);
+	clamp_to_min(call_p, max_p, policy.min_strategy);
+	clamp_to_min(raise_p, max_p, policy.min_strategy);
+      } else if(policy.strategy_clamp == ClampToZero) {
+	clamp_to_zero(fold_p, max_p, policy.min_strategy);
+	clamp_to_zero(call_p, max_p, policy.min_strategy);
+	clamp_to_zero(raise_p, max_p, policy.min_strategy);
+      }
+    }
+    
     // GTO strategy - two variants depending on whether we can raise or not.
     template <bool CAN_RAISE>
     struct GtoStrategy;
@@ -62,42 +185,7 @@ namespace Poker {
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
       void adjust(double fold_profit, double call_profit, double raise_profit, const StrategyAdjustPolicyT& policy) {
-	
-	// We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
-	// If there's no coverage we don't have any data for adjustment so just bail.
-	if(std::isnan(fold_profit) || std::isnan(call_profit) || std::isnan(raise_profit)) {
-	  return;
-	}
-	
-	// Normalise profits to be 0-based.
-	double min_profit = std::min(fold_profit, std::min(call_profit, raise_profit));
-	// All positive...
-	fold_profit -= min_profit; call_profit -= min_profit; raise_profit -= min_profit;
-	
-	// Normalise profits to sum to 1.0
-	normalise_to_unit_sum(fold_profit, call_profit, raise_profit);
-	
-	// Give some leeway
-	fold_profit += policy.leeway; call_profit += policy.leeway; raise_profit += policy.leeway;
-	
-	// Adjust strategies...
-	fold_p *= fold_profit; call_p *= call_profit; raise_p *= raise_profit;
-	
-	// Strategies must sum to 1.0
-	normalise_to_unit_sum(fold_p, call_p, raise_p);
-	
-	// Find the maximum strategy so we can adjust it against the clamped small values
-	double& fold_call_max_p = fold_p > call_p ? fold_p : call_p;
-	double& max_p = fold_call_max_p > raise_p ? fold_call_max_p : raise_p;
-
-	// Apply clamping policy
-	if(policy.strategy_clamp == ClampToMin) {
-	  clamp_to_min(fold_p, max_p, policy.min_strategy);
-	  clamp_to_min(call_p, max_p, policy.min_strategy);
-	  clamp_to_min(raise_p, max_p, policy.min_strategy);
-	} else if(policy.strategy_clamp == ClampToZero) {
-	  // TODO
-	}
+      	adjust_strategy(fold_profit, call_profit, raise_profit, fold_p, call_p, raise_p, policy);
       }
       
     }; // struct GtoStrategy</*CAN_RAISE*/true>
@@ -118,42 +206,9 @@ namespace Poker {
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
       void adjust(double fold_profit, double call_profit, const StrategyAdjustPolicyT& policy) {
-	
-	// We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
-	// If there's no coverage we don't have any data for adjustment so just bail.
-	if(std::isnan(fold_profit) || std::isnan(call_profit)) {
-	  return;
-	}
-	
-	// Normalise profits to be 0-based.
-	double min_profit = std::min(fold_profit, call_profit);
-	// All positive...
-	fold_profit -= min_profit; call_profit -= min_profit;
-	
-	// Normalise profits to sum to 1.0
-	normalise_to_unit_sum(fold_profit, call_profit);
-	
-	// Give some leeway
-	fold_profit += policy.leeway; call_profit += policy.leeway;
-	
-	// Adjust strategies...
-	fold_p *= fold_profit; call_p *= call_profit;
-	
-	// Strategies must sum to 1.0
-	normalise_to_unit_sum(fold_p, call_p);
-	
-	// Find the maximum strategy so we can adjust it against the clamped small values
-	double& max_p = fold_p > call_p ? fold_p : call_p;
-	
-	// Apply clamping policy
-	if(policy.strategy_clamp == ClampToMin) {
-	  clamp_to_min(fold_p, max_p, policy.min_strategy);
-	  clamp_to_min(call_p, max_p, policy.min_strategy);
-	} else if(policy.strategy_clamp == ClampToZero) {
-	  // TODO
-	}
+	adjust_strategy(fold_profit, call_profit, fold_p, call_p, policy);
       }
-
+      
     }; // struct GtoStrategy</*CAN_RAISE*/false>
     
     // Declaration of LimitHandStrategy.
