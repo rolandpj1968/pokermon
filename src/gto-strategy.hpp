@@ -41,6 +41,12 @@ namespace Poker {
     // Normalise values to sum to the given total
     static inline void normalise_to_total(double& fold_v, double& call_v, double& raise_v, double total) {
       double sum_vs = fold_v + call_v + raise_v;
+      if(sum_vs == 0.0) {
+	fold_v += 1.0/3;
+	call_v += 1.0/3;
+	raise_v += 1.0/3;
+	sum_vs = 1.0;
+      }
       double norm = sum_vs/total;
       fold_v /= norm; call_v /= norm; raise_v /= norm;
     }
@@ -53,6 +59,11 @@ namespace Poker {
     // Normalise values to sum to the given total
     static inline void normalise_to_total(double& fold_v, double& call_v, double total) {
       double sum_vs = fold_v + call_v;
+      if(sum_vs == 0.0) {
+	fold_v += 1.0/2;
+	call_v += 1.0/2;
+	sum_vs = 1.0;
+      }
       double norm = sum_vs/total;
       fold_v /= norm; call_v /= norm;
     }
@@ -67,7 +78,6 @@ namespace Poker {
     // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
     //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
     void adjust_strategy(double fold_profit, double call_profit, double& fold_p, double& call_p, const StrategyAdjustPolicyT& policy) {
-      
       // We will get NaN (from 0.0/0.0) if we don't have any coverage of this path.
       // If there's no coverage we don't have any data for adjustment so just bail.
       if(std::isnan(fold_profit) || std::isnan(call_profit)) {
@@ -77,7 +87,12 @@ namespace Poker {
       // In this case total_p might not be 1.0 in case we get here from the fold/call/raise path
       //   where one of them is NaN.
       double total_p = fold_p + call_p;
-      
+
+      if(total_p == 0.0) {
+	// Can't adjust two 0.0 paths and there is no point
+	return;
+      }
+
       // Normalise profits to be 0-based.
       double min_profit = std::min(fold_profit, call_profit);
       // All positive...
@@ -88,13 +103,13 @@ namespace Poker {
       
       // Give some leeway
       fold_profit += policy.leeway; call_profit += policy.leeway;
-      
+
       // Adjust strategies...
       fold_p *= fold_profit; call_p *= call_profit;
       
       // Strategies must sum to same total as before
       normalise_to_total(fold_p, call_p, total_p);
-      
+
       // Find the maximum strategy so we can adjust it against the clamped small values
       double& max_p = fold_p > call_p ? fold_p : call_p;
       
