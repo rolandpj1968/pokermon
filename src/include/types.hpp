@@ -18,6 +18,7 @@ namespace Poker {
     NSuits
   };
 
+  [[maybe_unused]]
   static const char* SUIT_CHARS = "SHDC";
 
   enum RankT: u8 {
@@ -46,6 +47,7 @@ namespace Poker {
     return rank == AceLow ? Ace : rank;
   }
 
+  [[maybe_unused]]
   static const char* RANK_CHARS = "a23456789XJQKA";
   
   // Note that Ace appears in bit 0 and bit 13 typically
@@ -147,6 +149,7 @@ namespace Poker {
     NHandRankings
   };
 
+  [[maybe_unused]]
   static const char* HAND_EVALS[] = {
     "High-Card",
     "Pair",

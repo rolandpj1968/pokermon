@@ -28,7 +28,7 @@ static void dump_fold_call_strategy(const FoldCallStrategy& strategy) {
 }
 
 static void dump_p0_hand_strategy(int rank1, int rank2, bool suited, const LimitRootTwoHandStrategy& hand_strategy) {
-  printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf("P0 %c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf("  open:                   "); dump_fold_call_raise_strategy(hand_strategy.strategy); printf("\n");
   printf("  call-raise:             "); dump_fold_call_raise_strategy(hand_strategy.call.raise.strategy); printf("\n");
   printf("  call-raise-raise-raise: "); dump_fold_call_strategy(hand_strategy.call.raise.raise.raise.strategy); printf("\n");
@@ -36,7 +36,7 @@ static void dump_p0_hand_strategy(int rank1, int rank2, bool suited, const Limit
 }
 
 static void dump_p1_hand_strategy(int rank1, int rank2, bool suited, const LimitRootTwoHandStrategy& hand_strategy) {
-  printf("%c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
+  printf("P1 %c%c%c\n", RANK_CHARS[rank1], RANK_CHARS[rank2], (suited ? 's' : 'o'));
   printf("  call:                   "); dump_fold_call_raise_strategy(hand_strategy.call.strategy); printf("\n");
   printf("  call-raise-raise:       "); dump_fold_call_raise_strategy(hand_strategy.call.raise.raise.strategy); printf("\n");
   printf("  raise:                  "); dump_fold_call_raise_strategy(hand_strategy.raise.strategy); printf("\n");
@@ -45,7 +45,7 @@ static void dump_p1_hand_strategy(int rank1, int rank2, bool suited, const Limit
 
 static void dump_p0_strategy(LimitRootTwoHandHoleHandStrategies& player_strategies) {
 
-  printf("Player 0 - Small Blind - Strategy:\n\n");
+  printf("P0 SB - Strategy:\n\n");
   
   // Pocket pairs
   bool suited = false;
@@ -79,7 +79,7 @@ static void dump_p0_strategy(LimitRootTwoHandHoleHandStrategies& player_strategi
 
 static void dump_p1_strategy(LimitRootTwoHandHoleHandStrategies& player_strategies) {
 
-  printf("Player 1 - Big Blind - Strategy:\n\n");
+  printf("P1 BB - Strategy:\n\n");
   
   // Pocket pairs
   bool suited = false;
@@ -256,10 +256,10 @@ static void converge_heads_up_preflop_strategies_one_round(LimitRootTwoHandHoleH
 
   if(false && config.do_dump) {
     // What is the initial state
-    printf("Player 0 - Small Blind - initial state - should be all 0.0\n\n");
+    printf("P0 SB - initial state - should be all 0.0\n\n");
     dump_player_eval(true, p0_eval);
     printf("\n\n");
-    printf("Player 1 - Big Blind - initial state - should be all 0.0\n\n");
+    printf("P1 BB - initial state - should be all 0.0\n\n");
     dump_player_eval(false, p1_eval);
     printf("\n\n");
   }
@@ -346,10 +346,10 @@ static void converge_heads_up_preflop_strategies_one_round(LimitRootTwoHandHoleH
     printf("P0 KK %d norm KK %d\n\n", n_p0_kk, n_p0_norm_kk);
     printf("   n_hands %d expecting %d - AA is %.4lf%% KK is %.4lf%%\n", n_hands, config.n_deals, (double)n_p0_aa/(double)n_hands * 100.0, (double)n_p0_kk/(double)n_hands * 100.0);
     // What is the outcome
-    printf("Player 0 - Small Blind - outcomes\n\n");
+    printf("P0 SB - outcomes\n\n");
     dump_player_eval(true, p0_eval);
     printf("\n\n");
-    printf("Player 1 - Big Blind - outcomes\n\n");
+    printf("P1 BB - outcomes\n\n");
     dump_player_eval(false, p1_eval);
     printf("\n\n");
   }
@@ -371,8 +371,8 @@ struct ConvergeConfig {
   double leeway_inc;
   double min_strategy;
   StrategyClampT clamp_policy;
-  int clamp_to_min_n_rounds = 64; // Only if clamp_policy is ClampToZero
-  int dump_n_rounds; // Dump output only every dump_n_rounds rounds
+  int clamp_to_min_n_rounds; // Only if clamp_policy is ClampToZero
+  int dump_n_rounds; // Dump output only every dump_n_rounds rounds; 0 for never dump
 };
 
 //template <int N_PLAYERS, typename HandStrategyT>
@@ -390,7 +390,7 @@ static void converge_heads_up_preflop_strategies(LimitRootTwoHandHoleHandStrateg
     printf("==========================================================================================\n\n");
     printf("deals %d - leeway %.2lf\n\n", n_deals, leeway);
 
-    bool do_dump = round % config.dump_n_rounds == 0;
+    bool do_dump = config.dump_n_rounds != 0 && round % config.dump_n_rounds == 0;
     
     if(do_dump) {
       dump_p0_strategy(hole_hand_strategies);
@@ -415,10 +415,10 @@ static void converge_heads_up_preflop_strategies(LimitRootTwoHandHoleHandStrateg
 }
 
 int main() {
-  int N_ROUNDS = 10000;
+  int N_ROUNDS = 100000;
   //int N_ROUNDS = 1000;
   //int N_DEALS = 10608/*52*51*4*/;
-  int N_DEALS = 2*3*5*7*11;
+  int N_DEALS = 2*3*5*7*11*13*17;
   //int N_DEALS = 16*10608/*52*51*4*/;
   // int N_ROUNDS = 1;
   // int N_DEALS = 1;
@@ -426,13 +426,13 @@ int main() {
   // double leeway = 0.1;
   //int N_DEALS_INC = 0; // 10608/*52*51*4*/ / 4;
   //int N_DEALS_INC = 128; ///*52*51*4*/ / 8;
-  int N_DEALS_INC = 13;
+  int N_DEALS_INC = /*17;//*/19;
   double leeway = 0.1;
   double leeway_inc = 0.0001;
   double min_strategy = 0.000000001;
-  int dump_n_rounds = 16;
-  StrategyClampT clamp_policy = ClampToZero;
-  int clamp_to_min_n_rounds = 64; // only if clamp_policy is ClampToZero
+  int dump_n_rounds = 64;
+  StrategyClampT clamp_policy = NoClamp;
+  int clamp_to_min_n_rounds = 4; // only useful if clamp_policy is ClampToZero
   
   std::seed_seq seed{1, 2, 3, 4, 6};
   Dealer::DealerT dealer(seed);
@@ -450,15 +450,37 @@ int main() {
   //   2. Round two with ClampToZero
   // From round 2 we get decent eval EV's even for 0.0 probability choices
   //
-  // TODO
-  //
+
+  int N_DEALS_FINAL = 2*3*5*7*11*13*17*19;
+
+  printf("\n\n");
+  printf("==========================================================================================\n");
+  printf("==============                                                             ===============\n");
+  printf("==============                Clamp to Min Final Round(s)                  ===============\n");
+  printf("==============                                                             ===============\n");
+  printf("==========================================================================================\n\n\n");
+
+  const ConvergeConfig config1 = { dealer, /*n_rounds*/1, N_DEALS_FINAL, /*n_deals_inc*/0, /*leeway*/1.0, /*leeway_inc*/0.0, min_strategy, ClampToMin, /*clamp_to_min_n_rounds*/0, /*dump_n_rounds*/0 };
+
+  converge_heads_up_preflop_strategies(*hole_hand_strategies, config1);
+
+  printf("\n\n");
+  printf("==========================================================================================\n");
+  printf("==============                                                             ===============\n");
+  printf("==============                Clamp to Zero Final Round(s)                 ===============\n");
+  printf("==============                                                             ===============\n");
+  printf("==========================================================================================\n\n\n");
+
+  const ConvergeConfig config2 = { dealer, /*n_rounds*/1, N_DEALS_FINAL, /*n_deals_inc*/0, /*leeway*/1.0, /*leeway_inc*/0.0, min_strategy, ClampToZero, /*clamp_to_min_n_rounds*/0, /*dump_n_rounds*/1 };
+
+  converge_heads_up_preflop_strategies(*hole_hand_strategies, config2);
 
   printf("\n\n");
   printf("==========================================================================================\n");
   printf("==============                                                             ===============\n");
   printf("==============                     Final Strategies                        ===============\n");
   printf("==============                                                             ===============\n");
-  printf("==========================================================================================\n\n\n");;
+  printf("==========================================================================================\n\n\n");
 
   dump_p0_strategy(*hole_hand_strategies);
   printf("\n\n");
