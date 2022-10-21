@@ -1,0 +1,70 @@
+The flop is a huge path explosion in strategy/eval trees, since it's 3 new cards, and added to the hole cards this creates a lot of equivalence classes - ~8000 per hole card equivalence class.
+
+It seems prudent to use an interim clumped/chunked representation of the flop, so that we get useful evaluation without full explosion of the tree.
+
+Proposed categories. In general these categories will be augmented by straight/flush potential, hence there is a multiplicative effect.
+
+Straight/Flush Potential:
+=========================
+
+Only when this includes a hole card.
+
+1. Inner straight draw in 1.
+2. Outer straight draw in 1.
+3. Double inner straight draw in 2.
+4. Inner/outer straight draw in 2.
+5. Double outer straight draw in 2.
+
+6. Flush draw in 1, high hole card
+7. Flush draw in 1 (not high hole card)
+8. Flush draw in 2, high hole card
+9. Flush draw in 2 (not high hole card)
+
+10. Flush
+11. Straight
+
+Complete flush/straight dominates draw in 1, and draw in 1 dominates draw in 2. Flush (draw) dominates straight (draw).
+
+Pocket Pair:
+============
+
+1. Overpair
+2. 2nd pair
+3. 3rd pair
+4. Underpair
+5. Two pair, higher pocket pair
+6. Two pair, lower pocket pair
+7. Set
+8. Full house
+9. Quads
+
+Cannot have complete straight/flush.
+
+Mix straight/flush in only for categories 1 to 7. Categories 5, 6, 7 can only have straight/flush draw in 2.
+
+Total categories: 4 * 9 + 3 * 5 + 2 == 53 categories.
+
+Suited:
+=======
+
+1. Nothing
+2. High card
+3. High pair
+4. Middle pair
+5. Low pair
+6. High 2-pair
+7. Middle 2-pair
+8. Low 2-pair
+9. Set (with 1 hole card)
+10. Full house
+11. Quads
+
+Completed flush/straight are their own category. 6, 7, 8, 9 can only have straight/flush draw-in-2. 10, 11 are own category.
+
+Total categories: 2 (straight/flush) + 5 * 9 + 4 * 5 + 2 == 69 categories
+
+Off-suit:
+=========
+
+Same as suited, except completed flush is not possible == 68 categories.
+

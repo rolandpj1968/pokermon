@@ -50,10 +50,11 @@ namespace Limit {
     template <std::size_t N_PLAYERS>
     struct StrategyNodeT {
 
-      const Config::ConfigT& config;
-
       const GameTree::GameTreeNodeT<N_PLAYERS>& game_tree_node;
 
+      // The player whose strategy this is.
+      const std::size_t my_player_no;
+      
       //////////////////// SubNodes for Special Nodes ////////////////////////////
 
       // For hole card deal node.
