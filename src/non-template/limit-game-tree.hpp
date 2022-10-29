@@ -44,6 +44,11 @@ namespace Limit {
     const std::size_t BB = 1;
     const std::size_t UTG = 2;
 
+    template <std::size_t N_PLAYERS>
+    static inline std::size_t next_player_no(std::size_t player_no) {
+      return (player_no + 1) % N_PLAYERS;
+    }
+
     // Player 0 is small blind (SB)
     // Player 1 is big blind (BB)
     template <std::size_t N_PLAYERS>
@@ -98,6 +103,20 @@ namespace Limit {
       // For compiler to check uninitialised members.
       bool init_check;
 
+      bool next_active_player_no(std::size_t player_no) {
+	std::size_t new_player_no;
+
+	for (new_player_no = next_player_no<N_PLAYERS>(player_no); new_player_no != player_no; new_player_no = next_player_no<N_PLAYERS>(new_player_no)) {
+	  if (!players_folded[new_player_no]) {
+	    break;
+	  }
+	}
+
+	assert(new_player_no != player_no);
+
+	return new_player_no;
+      }
+
       static GameTreeNodeT<N_PLAYERS>* new_root(const Config::ConfigT& config) {
 
 	std::array<double, N_PLAYERS> new_players_bets{};
@@ -139,10 +158,14 @@ namespace Limit {
       	// In heads-up, SB starts pre-flop - otherwise under-the-gun (UTG) player 2.
 	// In heads-up, BB starts post-flop - otherwise SB;
 
-	// Oops, needs to be an active player! !$#%@#$%@#$%@#$%
       	std::size_t new_player_no = this->street == PREFLOP_STREET
 	  ? (N_PLAYERS <= 2 ? SB : UTG)
 	  : (N_PLAYERS <= 2 ? BB : SB);
+	
+	// Must be an active player.
+	if (players_folded[new_player_no]) {
+	  new_player_no = next_active_player_no(new_player_no);
+	}
 
       	child = new GameTreeNodeT<N_PLAYERS> {
 					      .config = this->config,
@@ -155,7 +178,7 @@ namespace Limit {
 					      .players_folded = this->players_folded,
 					      .player_no = new_player_no,
 					      .n_raises_left = this->config.max_n_preflop_raises, // @#$@#$ wrong
-					      .n_calls_left = N_PLAYERS - 1,
+					      .n_calls_left = this->n_players_active,
 					      .steal_player_no = 0,
 					      .is_expanded = false,
 					      .child = 0,
@@ -175,12 +198,16 @@ namespace Limit {
 	std::array<bool, N_PLAYERS> new_players_folded = this->players_folded;
 	new_players_folded[this->player_no] = true;
 
+	std::size_t new_player_no = next_active_player_no(this->player_no);
+
 	const std::size_t new_n_players_active = this->n_players_active - 1;
 
-	const std::size_t new_n_calls_left = this->n_calls_left - 1;
+	std::size_t new_n_raises_left = this->n_raises_left;
 
-	// Only valid if there will be only one player left in the pot.
-	std::size_t new_steal_player_no = this->steal_player_no;
+	std::size_t new_n_calls_left = this->n_calls_left - 1;
+
+	// Only used if there is now only one player left in the pot.
+	std::size_t new_steal_player_no = 0;
 
 	// Max bet doesn't change, except if this is the last betting node on this street - then max_bet is reset to 0.0.
 	double new_max_bet = this->max_bet;
@@ -190,12 +217,19 @@ namespace Limit {
 	  new_street = RESULT_STREET;
 	  new_node_type = STEAL_NODE;
 
+	  new_player_no = 0;
+
 	  new_steal_player_no = std::find(new_players_folded.begin(), new_players_folded.end(), false) - new_players_folded.begin();
 	  assert(new_steal_player_no < N_PLAYERS);
+
+	  new_n_raises_left = 0;
+	  new_n_calls_left = 0;
 	} else if (new_n_calls_left == 0) {
 	  new_street = next_street(street);
 	  new_node_type = this->street == RIVER_STREET ? SHOWDOWN_NODE : BETTING_NODE;
+	  new_player_no = 0;
 	  new_max_bet = 0.0;
+	  new_n_raises_left = 0;
 	}
 
 	return new GameTreeNodeT<N_PLAYERS> {
@@ -207,8 +241,8 @@ namespace Limit {
 	    .max_bet = new_max_bet,
 	    .pot = this->pot,
 	    .players_folded = new_players_folded,
-	    .player_no = (this->player_no + 1) % N_PLAYERS,
-	    .n_raises_left = this->n_raises_left,
+	    .player_no = new_player_no,
+	    .n_raises_left = new_n_raises_left,
 	    .n_calls_left = new_n_calls_left,
 	    .steal_player_no = new_steal_player_no,
 	    .is_expanded = false,
@@ -231,8 +265,12 @@ namespace Limit {
 	std::array<double, N_PLAYERS> new_players_bets = this->players_bets;
 	new_players_bets[this->player_no] = this->max_bet;
 
-	const std::size_t new_n_calls_left = this->n_calls_left - 1;
+	std::size_t new_player_no = next_active_player_no(this->player_no);
 
+	std::size_t new_n_calls_left = this->n_calls_left - 1;
+
+	std::size_t new_n_raises_left = this->n_raises_left;
+	
 	// Max bet doesn't change, except if this is the last betting node on this street - then max_bet is reset to 0.0.
 	double new_max_bet = this->max_bet;
 
@@ -241,6 +279,9 @@ namespace Limit {
 	  new_street = next_street(this->street);
 	  new_node_type = this->street == RIVER_STREET ? SHOWDOWN_NODE : DEAL_NODE;
 	  new_max_bet = 0.0;
+	  new_player_no = 0;
+	  new_n_calls_left = 0;
+	  new_n_raises_left = 0;
 	}
 
 	return new GameTreeNodeT<N_PLAYERS> {
@@ -252,8 +293,8 @@ namespace Limit {
 	    .max_bet = new_max_bet,
 	    .pot = new_pot,
 	    .players_folded = this->players_folded,
-	    .player_no = (this->player_no + 1) % N_PLAYERS,
-	    .n_raises_left = this->n_raises_left,
+	    .player_no = new_player_no,
+	    .n_raises_left = new_n_raises_left,
 	    .n_calls_left = new_n_calls_left,
 	    .steal_player_no = 0,
 	    .is_expanded = false,
@@ -275,6 +316,8 @@ namespace Limit {
 	std::array<double, N_PLAYERS> new_players_bets = this->players_bets;
 	new_players_bets[this->player_no] = new_max_bet;
 
+	std::size_t new_player_no = next_active_player_no(this->player_no);
+
 	return new GameTreeNodeT<N_PLAYERS> {
 	  .config = this->config,
 	    .street = this->street,
@@ -284,50 +327,9 @@ namespace Limit {
 	    .max_bet = new_max_bet,
 	    .pot = new_pot,
 	    .players_folded = this->players_folded,
-	    .player_no = (this->player_no + 1) % N_PLAYERS,
+	    .player_no = new_player_no,
 	    .n_raises_left = this->n_raises_left - 1,
-	    .n_calls_left = N_PLAYERS - 1,
-	    .steal_player_no = 0,
-	    .is_expanded = false,
-	    .child = 0,
-	    .fold = 0,
-	    .call = 0,
-	    .raise = 0,
-	    .init_check = true,
-	    };
-      }
-
-      GameTreeNodeT<N_PLAYERS>* new_folded_child() {
-	assert(this->players_folded[this->player_no]);
-	
-	// Most often the child will be another betting node of the same street.
-	street_t new_street = this->street;
-	node_t new_node_type = this->node_type;
-
-	const std::size_t new_n_calls_left = this->n_calls_left - 1;
-
-	// Max bet doesn't change, except if this is the last betting node on this street - then max_bet is reset to 0.0.
-	double new_max_bet = this->max_bet;
-
-	// Has everyone still active called?
-	if (new_n_calls_left == 0) {
-	  new_street = next_street(this->street);
-	  new_node_type = this->street == RIVER_STREET ? SHOWDOWN_NODE : DEAL_NODE;
-	  new_max_bet = 0.0;
-	}
-
-	return new GameTreeNodeT<N_PLAYERS> {
-	  .config = this->config,
-	    .street = new_street,
-	    .node_type = new_node_type,
-	    .n_players_active = this->n_players_active,
-	    .players_bets = this->players_bets,
-	    .max_bet = new_max_bet,
-	    .pot = this->pot,
-	    .players_folded = this->players_folded,
-	    .player_no = (this->player_no + 1) % N_PLAYERS,
-	    .n_raises_left = this->n_raises_left,
-	    .n_calls_left = new_n_calls_left,
+	    .n_calls_left = this->n_players_active - 1,
 	    .steal_player_no = 0,
 	    .is_expanded = false,
 	    .child = 0,
@@ -348,14 +350,9 @@ namespace Limit {
       	assert(this->street != RESULT_STREET);
       	assert(this->node_type == BETTING_NODE);
 
-	
 	assert(this->n_players_active > 1);
 
-	// If this player has already folded, then this is just a pass-thru node
-	if (this->players_folded[this->player_no]) {
-	  this->child = new_folded_child();
-	  return;
-	}
+	assert(!this->players_folded[this->player_no]);
 
 	// Create the fold child.
 	this->fold = new_fold_child();
@@ -370,16 +367,14 @@ namespace Limit {
       }
       
       // Expand one level down, if we've not yet expanded.
-      // $%^#$%^#$% scrap betting nodes where player is inactive
       void expand() {
 	if (this->is_expanded) { return; }
 
-	//@#$%@#$% terminal nodes like steal
+	if (this->street == RESULT_STREET) { return; }
 
 	switch (this->node_type) {
 	case DEAL_NODE:    expand_deal_node(); break;
 	case BETTING_NODE: expand_betting_node(); break;
-	  //, FLOP_DEAL_CLUMPED_NODE, FLOP_DEAL_EXACT_NODE, FLOP_BETTING_NODE, TURN_DEAL_NODE, TURN_BETTING_NODE, RIVER_DEAL_NODE, RIVER_BETTING_NODE };
 
 	default:
 	  //printf("RPJ - %s node type unrecognised\n", STREET_NAMES[this->street]);
