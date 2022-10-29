@@ -8,8 +8,8 @@ namespace Limit {
 
   namespace Config {
 
+    template <std::size_t N_PLAYERS>
     struct ConfigT {
-      const std::size_t n_players;
       const double small_blind;
       const double big_blind;
       const double preflop_raise;

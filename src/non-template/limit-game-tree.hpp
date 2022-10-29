@@ -24,7 +24,8 @@ namespace Limit {
       }
     }
 
-    static inline double street_raise(street_t street, const Config::ConfigT& config) {
+    template <std::size_t N_PLAYERS>
+    static inline double street_raise(street_t street, const Config::ConfigT<N_PLAYERS>& config) {
       switch (street) {
       case PREFLOP_STREET: return config.preflop_raise;
       case FLOP_STREET:    return config.flop_raise;
@@ -36,7 +37,8 @@ namespace Limit {
       return 0.0;
     }
 
-    static inline std::size_t street_max_n_raises(street_t street, const Config::ConfigT& config) {
+    template <std::size_t N_PLAYERS>
+    static inline std::size_t street_max_n_raises(street_t street, const Config::ConfigT<N_PLAYERS>& config) {
       switch (street) {
       case PREFLOP_STREET: return config.max_n_preflop_raises;
       case FLOP_STREET:    return config.max_n_flop_raises;
@@ -66,7 +68,7 @@ namespace Limit {
     template <std::size_t N_PLAYERS>
     struct GameTreeNodeT {
 
-      const Config::ConfigT& config;
+      const Config::ConfigT<N_PLAYERS>& config;
 
       const street_t street;
       const node_t node_type;
@@ -129,7 +131,7 @@ namespace Limit {
 	return new_player_no;
       }
 
-      static GameTreeNodeT<N_PLAYERS>* new_root(const Config::ConfigT& config) {
+      static GameTreeNodeT<N_PLAYERS>* new_root(const Config::ConfigT<N_PLAYERS>& config) {
 
 	std::array<double, N_PLAYERS> new_players_bets{};
 	new_players_bets[SB] = config.small_blind;
