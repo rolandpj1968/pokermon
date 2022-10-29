@@ -103,7 +103,7 @@ namespace Limit {
       // For compiler to check uninitialised members.
       bool init_check;
 
-      bool next_active_player_no(std::size_t player_no) {
+      std::size_t next_active_player_no(std::size_t player_no) {
 	std::size_t new_player_no;
 
 	for (new_player_no = next_player_no<N_PLAYERS>(player_no); new_player_no != player_no; new_player_no = next_player_no<N_PLAYERS>(new_player_no)) {
@@ -352,7 +352,7 @@ namespace Limit {
 
 	assert(this->n_players_active > 1);
 
-	assert(!this->players_folded[this->player_no]);
+	//assert(!this->players_folded[this->player_no]);
 
 	// Create the fold child.
 	this->fold = new_fold_child();
