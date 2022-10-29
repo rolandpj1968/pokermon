@@ -36,6 +36,18 @@ namespace Limit {
       return 0.0;
     }
 
+    static inline std::size_t street_max_n_raises(street_t street, const Config::ConfigT& config) {
+      switch (street) {
+      case PREFLOP_STREET: return config.max_n_preflop_raises;
+      case FLOP_STREET:    return config.max_n_flop_raises;
+      case TURN_STREET:    return config.max_n_turn_raises;
+      case RIVER_STREET:   return config.max_n_river_raises;
+      default:             assert(0 && "invalid street for street_max_n_raises()");
+      }
+      
+      return 0.0;
+    }
+
     enum node_t { DEAL_NODE, BETTING_NODE, SHOWDOWN_NODE, STEAL_NODE, N_NODE_TYPES };
     [[maybe_unused]]
     static const char *const NODE_TYPE_NAMES[N_NODE_TYPES] = { "deal", "bet", "showdown", "steal" };
@@ -152,6 +164,7 @@ namespace Limit {
       	assert(this->call == 0);
       	assert(this->raise == 0);
       	assert(this->node_type == DEAL_NODE);
+	assert(this->n_players_active > 1);
 
       	// Child node of a deal node is the first betting round.
 
@@ -177,7 +190,7 @@ namespace Limit {
 					      .pot = this->pot,
 					      .players_folded = this->players_folded,
 					      .player_no = new_player_no,
-					      .n_raises_left = this->config.max_n_preflop_raises, // @#$@#$ wrong
+					      .n_raises_left = street_max_n_raises(this->street, this->config),
 					      .n_calls_left = this->n_players_active,
 					      .steal_player_no = 0,
 					      .is_expanded = false,
@@ -209,9 +222,6 @@ namespace Limit {
 	// Only used if there is now only one player left in the pot.
 	std::size_t new_steal_player_no = 0;
 
-	// Max bet doesn't change, except if this is the last betting node on this street - then max_bet is reset to 0.0.
-	double new_max_bet = this->max_bet;
-
 	// Is there only one man standing?
 	if (new_n_players_active == 1) {
 	  new_street = RESULT_STREET;
@@ -226,9 +236,8 @@ namespace Limit {
 	  new_n_calls_left = 0;
 	} else if (new_n_calls_left == 0) {
 	  new_street = next_street(street);
-	  new_node_type = this->street == RIVER_STREET ? SHOWDOWN_NODE : BETTING_NODE;
+	  new_node_type = this->street == RIVER_STREET ? SHOWDOWN_NODE : DEAL_NODE;
 	  new_player_no = 0;
-	  new_max_bet = 0.0;
 	  new_n_raises_left = 0;
 	}
 
@@ -238,7 +247,7 @@ namespace Limit {
 	    .node_type = new_node_type,
 	    .n_players_active = new_n_players_active,
 	    .players_bets = this->players_bets,
-	    .max_bet = new_max_bet,
+	    .max_bet = this->max_bet,
 	    .pot = this->pot,
 	    .players_folded = new_players_folded,
 	    .player_no = new_player_no,
@@ -271,16 +280,11 @@ namespace Limit {
 
 	std::size_t new_n_raises_left = this->n_raises_left;
 	
-	// Max bet doesn't change, except if this is the last betting node on this street - then max_bet is reset to 0.0.
-	double new_max_bet = this->max_bet;
-
 	// Has everyone left called?
 	if (new_n_calls_left == 0) {
 	  new_street = next_street(this->street);
 	  new_node_type = this->street == RIVER_STREET ? SHOWDOWN_NODE : DEAL_NODE;
-	  new_max_bet = 0.0;
 	  new_player_no = 0;
-	  new_n_calls_left = 0;
 	  new_n_raises_left = 0;
 	}
 
@@ -290,7 +294,7 @@ namespace Limit {
 	    .node_type = new_node_type,
 	    .n_players_active = this->n_players_active,
 	    .players_bets = new_players_bets,
-	    .max_bet = new_max_bet,
+	    .max_bet = this->max_bet,
 	    .pot = new_pot,
 	    .players_folded = this->players_folded,
 	    .player_no = new_player_no,
@@ -351,6 +355,8 @@ namespace Limit {
       	assert(this->node_type == BETTING_NODE);
 
 	assert(this->n_players_active > 1);
+	assert(this->n_calls_left <= N_PLAYERS);
+	assert(this->n_calls_left > 0);
 
 	//assert(!this->players_folded[this->player_no]);
 
