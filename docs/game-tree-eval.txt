@@ -68,7 +68,7 @@ We now have a GTO estimation, which should be arbitrarily accurate, for the trun
 Expanding Tree
 ==============
 
-Pick leaf nodes with the greatest probability of activity and/or the greatest EV (suggest sorting on prob first and EV second) and expand them one more level. A good metric here is (prob x |EV|), since this reflects the "impact" of the node on the overall EV.
+Pick leaf nodes with the greatest probability of activity and/or the greatest EV (suggest sorting on prob first and EV second) and expand them one more level. A good metric here is (prob x |EV|), since this reflects the "impact" of the node on the overall EV. However, we also need to expand on just prob otherwise non-blind players will simply fold and never get expanded :)
 
 Open question as to how many nodes to expand each epoch.
 
