@@ -26,7 +26,7 @@ namespace Limit {
 
       // [i][i] for pocket pairs
       // [i][j] with i > j for suited
-      // [i][j] with i < j for off-suite
+      // [i][j] with i < j for off-suit
       std::array<std::array<StrategyNodeT<N_PLAYERS>*, 13>, 13> hole_cards_strategies;
 
       StrategyNodeT<N_PLAYERS>* hole_cards_strategy(CardT card1, CardT card2) {
@@ -89,6 +89,8 @@ namespace Limit {
       StrategyNodeT<N_PLAYERS>* check_strategy;
       StrategyNodeT<N_PLAYERS>* raise_strategy;
     
+      // For compiler to check uninitialised members.
+      bool init_check;
     };
     
   } // namespace Strategy

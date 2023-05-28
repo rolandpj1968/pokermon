@@ -114,7 +114,7 @@ namespace Limit {
       GameTreeNodeT<N_PLAYERS>* call;
       GameTreeNodeT<N_PLAYERS>* raise;
 
-      // For compiler to check uninitialised members.
+      // For compiler to check uninitialised members (must be last).
       bool init_check;
 
       std::size_t next_active_player_no(std::size_t player_no) {

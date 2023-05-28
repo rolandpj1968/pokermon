@@ -1,0 +1,18 @@
+Deal nodes, particularly the flop, explode the strategy tree significantly. Here is a proposal for auto-clumping of deal cards.
+
+Initially treat all deal card combinations as a single node in the strategy tree.
+
+Carry on expanding the strategy tree below the clumped deal node as required. Initially this is as if the player has no knowledge of the deal.
+
+At some stage consider splitting a deal node clump. Each clump split will take a single clump and partition it into two.
+
+In order to split, we maintain EV's (i.e. value and action) for every actual deal card combo. Split the clump into two new clumps at the half-way EV point between max EV and min EV in the clump.
+
+Splitting clumps requires either deleting the sub-tree of the parent clump, or cloning the subtree to both clumps. It seems like cloning will be faster, but more explosive in tree size.
+
+Note that we probably never want to split a clump whose strategy is "definitely" going to be default (only check/fold). We can model this as the clump has a "default" subtree AND the immediately higher-EV clump also has a "default" subtree.
+
+It seems possible that the per-card combo EV-sorting of a deal node will change. Accordingly, we need to re-jig the clumps after each monte-carlo round. Proposal - do this according to the original EV boundaries of each clump.
+
+The biggest remaining question is when to choose to split a clump. We don't want to do this purely on clump action, because then we will never expand the tree below a clump. Maybe at some fixed action level fraction of betting node expansion? 1000?
+
