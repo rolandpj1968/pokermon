@@ -67,7 +67,10 @@ void expand_all_to_street(Limit::GameTree::GameTreeNodeT<N_PLAYERS>* node, Limit
 int main() {
   printf("Hallo RPJ\n");
 
-  const Limit::Config::ConfigT</*2*/4> config {
+  constexpr std::size_t N_PLAYERS = 9;
+  constexpr auto UP_TO_STREET = Limit::GameTree::FLOP_STREET;
+
+  const Limit::Config::ConfigT<N_PLAYERS> config {
       .small_blind = 1.0,
       .big_blind = 2.0,
       .preflop_raise = 2.0,
@@ -80,16 +83,15 @@ int main() {
       .max_n_river_raises = 4,
   };
   
-  auto root = Limit::GameTree::GameTreeNodeT</*2*/4>::new_root(config);
+  auto root = Limit::GameTree::GameTreeNodeT<N_PLAYERS>::new_root(config);
 
-  //expand_all_to_street(root, Limit::GameTree::TURN_STREET);
-  expand_all_to_street(root, Limit::GameTree::RIVER_STREET);
+  expand_all_to_street(root, UP_TO_STREET);
 
   int count = 0;
 
   count_nodes(root, count);
 
-  printf("Found %d nodes\n", count);
+  printf("%zu players - %d nodes up to %s\n", N_PLAYERS, count, Limit::GameTree::STREET_NAMES[UP_TO_STREET]);
 
   // printf("\n");
   // dump_nodes(root, 0, 0);

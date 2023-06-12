@@ -1,6 +1,7 @@
 CXX ?= g++
 
 SRC_DIR = $(shell pwd)/src
+INCLUDE_DIR = $(shell pwd)/src/include
 
 CPP_FILES = $(wildcard src/*.cpp)
 
@@ -10,14 +11,14 @@ OBJ_FILES = $(addprefix obj/,$(notdir $(CPP_FILES:.cpp=.o)))
 
 # don't seem to get much better than plain old -O3
 
-CC_FLAGS = -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast -I$(SRC_DIR)
-#CC_FLAGS = -fprofile-generate -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast -I$(SRC_DIR)
-#CC_FLAGS = -fprofile-use -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast -I$(SRC_DIR)
-#CC_FLAGS = -Wall -std=c++11 -flto -march=native -O3 -I$(SRC_DIR)
-#CC_FLAGS = -Wall -std=c++11 -flto -O3 -I$(SRC_DIR)
-#CC_FLAGS = -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -flto -march=native -O3 -I$(SRC_DIR)
-#CC_FLAGS = -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -flto -march=native -O2 -I$(SRC_DIR)
-#CC_FLAGS = -Wall -std=c++11 -I$(SRC_DIR)
+CC_FLAGS = -Wall -std=c++17 -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast -I$(SRC_DIR) -I$(INCLUDE_DIR)
+#CC_FLAGS = -fprofile-generate -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast -I$(SRC_DIR) -I$(INCLUDE_DIR)
+#CC_FLAGS = -fprofile-use -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast -I$(SRC_DIR) -I$(INCLUDE_DIR)
+#CC_FLAGS = -Wall -std=c++11 -flto -march=native -O3 -I$(SRC_DIR) -I$(INCLUDE_DIR)
+#CC_FLAGS = -Wall -std=c++11 -flto -O3 -I$(SRC_DIR) -I$(INCLUDE_DIR)
+#CC_FLAGS = -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -flto -march=native -O3 -I$(SRC_DIR) -I$(INCLUDE_DIR)
+#CC_FLAGS = -Wall -std=c++11 -fshort-enums -fno-exceptions -fno-rtti -flto -march=native -O2 -I$(SRC_DIR) -I$(INCLUDE_DIR)
+#CC_FLAGS = -Wall -std=c++11 -I$(SRC_DIR) -I$(INCLUDE_DIR)
 
 LD_FLAGS = -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast
 #LD_FLAGS = -fprofile-generate -fshort-enums -fno-exceptions -fno-rtti -finline-limit=2000 -flto -march=native -Ofast

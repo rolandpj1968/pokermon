@@ -235,9 +235,7 @@ struct ConvergeOneRoundConfig {
   Dealer::DealerT& dealer;
   int n_deals;
   bool do_dump;
-  double leeway;
-  double min_strategy;
-  StrategyClampT strategy_clamp;
+  StrategyAdjustPolicyT adjust_policy;
 };
 
 static void converge_heads_up_preflop_strategies_one_round(LimitRootTwoHandHoleHandStrategies& player_strategies, const ConvergeOneRoundConfig& config) {
@@ -355,8 +353,7 @@ static void converge_heads_up_preflop_strategies_one_round(LimitRootTwoHandHoleH
   }
 
   printf("Adjusting strategies...\n\n");
-  const StrategyAdjustPolicyT adjust_policy = { config.leeway, config.min_strategy, config.strategy_clamp };
-  adjust_strategies(player_strategies, p0_eval, p1_eval, adjust_policy);
+  adjust_strategies(player_strategies, p0_eval, p1_eval, config.adjust_policy);
 
   delete ptr_p0_eval;
   delete ptr_p1_eval;
@@ -404,7 +401,7 @@ static void converge_heads_up_preflop_strategies(LimitRootTwoHandHoleHandStrateg
     if(clamp_policy == ClampToZero && config.clamp_to_min_n_rounds != 0 && round % config.clamp_to_min_n_rounds == 0) {
       clamp_policy = ClampToMin;
     }
-    const ConvergeOneRoundConfig one_round_config = { config.dealer, n_deals, do_dump, leeway, config.min_strategy, clamp_policy };
+    const ConvergeOneRoundConfig one_round_config = { config.dealer, n_deals, do_dump, { AdjustConverge, leeway, config.min_strategy, clamp_policy } };
     converge_heads_up_preflop_strategies_one_round(hole_hand_strategies, one_round_config);
     
     printf("\n\n... finished evaluation and adjustment\n\n");
@@ -430,7 +427,7 @@ int main() {
   double leeway = 0.1;
   double leeway_inc = 0.0001;
   double min_strategy = 0.000000001;
-  int dump_n_rounds = 64;
+  int dump_n_rounds = 4;
   StrategyClampT clamp_policy = NoClamp;
   int clamp_to_min_n_rounds = 4; // only useful if clamp_policy is ClampToZero
   

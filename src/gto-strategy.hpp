@@ -10,11 +10,16 @@ namespace Poker {
   
   namespace Gto {
 
-    // When adjusting strategies, how do we treat very small strategy values?
+    // Policy for adjusting strategies - either converge slowly, or immediately
+    //   clamp to the "best" strategy.
+    enum StrategyAdjustT { AdjustConverge, AdjustToMax };
+    
+    // When aadjusting strategies, how do we treat very small strategy values?
     enum StrategyClampT { NoClamp, ClampToMin, ClampToZero };
     
     // Configuration options for adjusting strategy values.
     struct StrategyAdjustPolicyT {
+      StrategyAdjustT adjust;
       double leeway;
       double min_strategy;
       StrategyClampT strategy_clamp;
@@ -93,22 +98,36 @@ namespace Poker {
 	return;
       }
 
-      // Normalise profits to be 0-based.
-      double min_profit = std::min(fold_profit, call_profit);
-      // All positive...
-      fold_profit -= min_profit; call_profit -= min_profit;
-      
-      // Normalise profits to sum to 1.0
-      normalise_to_unit_sum(fold_profit, call_profit);
-      
-      // Give some leeway
-      fold_profit += policy.leeway; call_profit += policy.leeway;
+      if(policy.adjust == AdjustToMax) {
+	fold_p = 0.0;
+	call_p = 0.0;
+	
+	// Bias towards fold if they're equal
+	if (fold_profit < call_profit) {
+	  call_p = 1.0;
+	} else {
+	  fold_p = 1.0;
+	}
+      } else {
+	// default to AdjustConverge
 
-      // Adjust strategies...
-      fold_p *= fold_profit; call_p *= call_profit;
-      
-      // Strategies must sum to same total as before
-      normalise_to_total(fold_p, call_p, total_p);
+	// Normalise profits to be 0-based.
+	double min_profit = std::min(fold_profit, call_profit);
+	// All positive...
+	fold_profit -= min_profit; call_profit -= min_profit;
+	
+	// Normalise profits to sum to 1.0
+	normalise_to_unit_sum(fold_profit, call_profit);
+	
+	// Give some leeway
+	fold_profit += policy.leeway; call_profit += policy.leeway;
+	
+	// Adjust strategies...
+	fold_p *= fold_profit; call_p *= call_profit;
+	
+	// Strategies must sum to same total as before
+	normalise_to_total(fold_p, call_p, total_p);
+      }
 
       // Find the maximum strategy so we can adjust it against the clamped small values
       double& max_p = fold_p > call_p ? fold_p : call_p;
@@ -143,25 +162,50 @@ namespace Poker {
 	return;
       }
       
-      // In this case total_p MUST sum to 1.0
-      double total_p = fold_p + call_p + raise_p;
-      
-      // Normalise profits to be 0-based.
-      double min_profit = std::min(fold_profit, std::min(call_profit, raise_profit));
-      // All positive...
-      fold_profit -= min_profit; call_profit -= min_profit; raise_profit -= min_profit;
-      
-      // Normalise profits to sum to 1.0
-      normalise_to_unit_sum(fold_profit, call_profit, raise_profit);
-      
-      // Give some leeway
-      fold_profit += policy.leeway; call_profit += policy.leeway; raise_profit += policy.leeway;
-      
-      // Adjust strategies...
-      fold_p *= fold_profit; call_p *= call_profit; raise_p *= raise_profit;
-      
-      // Strategies must sum to the same total as before adjustment - always 1.0 in this case
-      normalise_to_total(fold_p, call_p, raise_p, total_p);
+      if(policy.adjust == AdjustToMax) {
+	fold_p = 0.0;
+	call_p = 0.0;
+	raise_p = 0.0;
+	
+	// Bias towards fold if fold and call are equally profitable
+	if(fold_profit < call_profit) {
+	  // Bias towards call if call and raise are equally profitable
+	  if(call_profit < raise_profit) {
+	    raise_p = 1.0;
+	  } else {
+	    call_p = 1.0;
+	  }
+	} else {
+	  // Bias towards fold if fold and raise are equally profitable
+	  if(fold_profit < raise_profit) {
+	    raise_p = 1.0;
+	  } else {
+	    fold_p = 1.0;
+	  }
+	}
+      } else {
+	// default to AdjustConverge
+	
+	// In this case total_p MUST sum to 1.0
+	double total_p = fold_p + call_p + raise_p;
+	
+	// Normalise profits to be 0-based.
+	double min_profit = std::min(fold_profit, std::min(call_profit, raise_profit));
+	// All positive...
+	fold_profit -= min_profit; call_profit -= min_profit; raise_profit -= min_profit;
+	
+	// Normalise profits to sum to 1.0
+	normalise_to_unit_sum(fold_profit, call_profit, raise_profit);
+	
+	// Give some leeway
+	fold_profit += policy.leeway; call_profit += policy.leeway; raise_profit += policy.leeway;
+	
+	// Adjust strategies...
+	fold_p *= fold_profit; call_p *= call_profit; raise_p *= raise_profit;
+	
+	// Strategies must sum to the same total as before adjustment - always 1.0 in this case
+	normalise_to_total(fold_p, call_p, raise_p, total_p);
+      }
       
       // Find the maximum strategy so we can adjust it against the clamped small values
       double& fold_call_max_p = fold_p > call_p ? fold_p : call_p;
