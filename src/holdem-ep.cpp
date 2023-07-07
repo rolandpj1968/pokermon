@@ -64,10 +64,10 @@ static void add_action_and_value_by_p1_hole(std::pair<int, double> (*p0_action_a
 }
 
 int main() {
-  std::seed_seq seed{2, 3, 5, 7, 11};
+  std::seed_seq seed{2, 3, 5, 7, 13};
   Dealer::DealerT dealer(seed);
 
-  const int N_DEALS = 100000000;
+  const int N_DEALS = 10000000;
 
   double p0_total_value = 0.0;
   double p1_total_value = 0.0;

@@ -1,6 +1,7 @@
 #ifndef NORMAL_HPP
 #define NORMAL_HPP
 
+#include <algorithm>
 #include <cassert>
 #include <utility>
 
@@ -14,11 +15,7 @@ namespace Poker {
     RankT rank0 = to_ace_hi(card0.rank);
     RankT rank1 = to_ace_hi(card1.rank);
 
-    //printf("holdem_normal rank0 %c -> %c. rank1 %c -> %c\n", RANK_CHARS[card0.rank], RANK_CHARS[rank0], RANK_CHARS[card1.rank], RANK_CHARS[rank1]);
-
     Util::sort_desc(rank0, rank1);
-
-    //printf("      ordered - rank0 %c rank1 %c\n", RANK_CHARS[rank0], RANK_CHARS[rank1]);
 
     auto norm_card0 = CardT(Spades, rank0);
     auto norm_card1 = CardT((card0.suit == card1.suit ? Spades : Hearts), rank1);
@@ -95,7 +92,33 @@ namespace Poker {
       return holdem_hole_normal_offsuit(card0, card1, flop);
     }
   }
-  
+
+  // Normalised Omaha hand.
+  // Four cards - we sort the suits by bitmap (aces-high) and then map back to CardT's
+  inline std::tuple<CardT, CardT, CardT, CardT> omaha_hole_normal(CardT card0, CardT card1, CardT card2, CardT card3) {
+    card0 = to_ace_hi(card0);
+    card1 = to_ace_hi(card1);
+    card2 = to_ace_hi(card2);
+    card3 = to_ace_hi(card3);
+
+    const CardT cards[4] = { card0, card1, card2, card3 };
+    HandT hand = mkHand(cards, 4);
+
+    std::sort(hand.suits, hand.suits + 4, std::greater<RankBitsT>());
+    
+    CardT norm_cards[4] = {};
+    std::size_t norm_index = 0;
+
+    add_cards(Spades, hand.suits[0], norm_index, norm_cards, 4);
+    add_cards(Hearts, hand.suits[1], norm_index, norm_cards, 4);
+    add_cards(Diamonds, hand.suits[2], norm_index, norm_cards, 4);
+    add_cards(Clubs, hand.suits[3], norm_index, norm_cards, 4);
+
+    assert(norm_index == 4);
+
+    return std::make_tuple(norm_cards[0], norm_cards[1], norm_cards[2], norm_cards[3]);
+  }
+
 }// namespace Poker
 
 #endif //ndef NORMAL_HPP

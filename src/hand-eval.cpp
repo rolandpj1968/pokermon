@@ -250,7 +250,7 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT>> eval_pair(const s
 
 // Slow hand eval... 7 hand card like Holdem or each Omaha option.
 // @return pair(ranking, 5-characteristic-ranks)
-static std::pair<HandRankingT, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_hand_7card(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
+static Poker::HandEval::HandEvalT eval_hand_7card(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
   // Make sure all cards are unique
   std::set<CardT> unique_cards;
   unique_cards.insert(c0);
@@ -398,7 +398,39 @@ static std::pair<HandRankingT, std::tuple<RankT, RankT, RankT, RankT, RankT>> ev
 }
 
 // Slow hand eval...
-std::pair<HandRankingT, std::tuple<RankT, RankT, RankT, RankT, RankT>> Poker::HandEval::eval_hand(const std::pair<CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand(const std::pair<CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
   return eval_hand_7card(player.first, player.second, std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+}
+
+// Slow hand eval for Omaha...
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_omaha(const std::tuple<CardT, CardT, CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
+  auto best_hand_eval = eval_hand_7card(std::get<0>(player), std::get<1>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+
+  auto hand_eval_0_2 = eval_hand_7card(std::get<0>(player), std::get<2>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  if (best_hand_eval < hand_eval_0_2) {
+    best_hand_eval = hand_eval_0_2;
+  }
+
+  auto hand_eval_0_3 = eval_hand_7card(std::get<0>(player), std::get<3>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  if (best_hand_eval < hand_eval_0_3) {
+    best_hand_eval = hand_eval_0_3;
+  }
+
+  auto hand_eval_1_2 = eval_hand_7card(std::get<1>(player), std::get<2>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  if (best_hand_eval < hand_eval_1_2) {
+    best_hand_eval = hand_eval_1_2;
+  }
+
+  auto hand_eval_1_3 = eval_hand_7card(std::get<1>(player), std::get<3>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  if (best_hand_eval < hand_eval_1_3) {
+    best_hand_eval = hand_eval_1_3;
+  }
+
+  auto hand_eval_2_3 = eval_hand_7card(std::get<2>(player), std::get<3>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  if (best_hand_eval < hand_eval_2_3) {
+    best_hand_eval = hand_eval_2_3;
+  }
+
+  return best_hand_eval;
 }
 

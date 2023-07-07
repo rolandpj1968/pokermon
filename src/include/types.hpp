@@ -107,6 +107,14 @@ namespace Poker {
     }
   };
 
+  static inline CardT to_ace_low(const CardT card) {
+    return CardT(card.suit, to_ace_low(card.rank));
+  }
+
+  static inline CardT to_ace_hi(const CardT card) {
+    return CardT(card.suit, to_ace_hi(card.rank));
+  }
+
   struct HandT {
     union {
       RankBitsT suits[NSuits];

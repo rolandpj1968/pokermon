@@ -15,6 +15,9 @@ namespace Poker {
     
     // Slow hand eval.
     extern HandEvalT eval_hand(const std::pair<CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
+    
+    // Slow hand eval for Omaha...
+    extern HandEvalT eval_hand_omaha(const std::tuple<CardT, CardT, CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
   }
 }
 
