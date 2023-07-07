@@ -89,9 +89,12 @@ namespace Poker {
   };
 
   struct CardT {
-    const SuitT suit;
-    const RankT rank;
+    SuitT suit;
+    RankT rank;
 
+    CardT():
+      suit(Spades), rank(Ace) {}
+    
     CardT(const SuitT suit, const RankT rank):
       suit(suit), rank(rank) {}
 
@@ -105,7 +108,6 @@ namespace Poker {
   };
 
   struct HandT {
-    // Mmm - want these to be const but can't work out how to construct from card
     union {
       RankBitsT suits[NSuits];
       u64 hand;

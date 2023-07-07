@@ -1,3 +1,6 @@
+holdem-ep: holdem-ep.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
+	g++ -I ./include -Wall -O3 -o holdem-ep holdem-ep.cpp hand-eval.cpp
+
 preflop-gto: preflop-gto.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp gto-common.hpp gto-eval.hpp gto-strategy.hpp Makefile
 	g++ -I ./include -Wall -O3 -o preflop-gto preflop-gto.cpp hand-eval.cpp
 	#g++ -Wall -g -o preflop-gto preflop-gto.cpp hand-eval.cpp

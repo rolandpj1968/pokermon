@@ -10,6 +10,40 @@ namespace Poker {
   
   namespace Gto {
 
+    enum StrategyActionT { ActionFold, ActionCall, ActionRaise };
+
+    StrategyActionT get_max_p_action(double fold_p, double call_p, double raise_p) {
+      // Bias towards fold if fold and call are equally probable
+      if(fold_p < call_p) {
+	// Bias towards call if call and raise are equally probable
+	if(call_p < raise_p) {
+	  return ActionRaise;
+	} else {
+	  return ActionCall;
+	}
+      } else {
+	// Bias towards fold if fold and raise are equally probable
+	if(fold_p < raise_p) {
+	  return ActionRaise;
+	} else {
+	  return ActionFold;
+	}
+      }
+    }
+
+    StrategyActionT get_max_p_action(double fold_p, double call_p) {
+      // Bias towards fold if fold and call are equally probable
+      if(fold_p < call_p) {
+	return ActionCall;
+      } else {
+	return ActionFold;
+      }
+    }
+
+    struct StrategyAdjustStatsT {
+      int n_max_p_action_changes;
+    };
+
     // Policy for adjusting strategies - either converge slowly, or immediately
     //   clamp to the "best" strategy.
     enum StrategyAdjustT { AdjustConverge, AdjustToMax };
@@ -243,8 +277,13 @@ namespace Poker {
       //   penalise the less profitable options.
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
-      void adjust(double fold_profit, double call_profit, double raise_profit, const StrategyAdjustPolicyT& policy) {
+      void adjust(double fold_profit, double call_profit, double raise_profit, const StrategyAdjustPolicyT& policy, StrategyAdjustStatsT& stats) {
+	StrategyActionT prev_max_p_action = get_max_p_action(fold_p, call_p, raise_p);
       	adjust_strategy(fold_profit, call_profit, raise_profit, fold_p, call_p, raise_p, policy);
+	StrategyActionT max_p_action = get_max_p_action(fold_p, call_p, raise_p);
+	if(prev_max_p_action != max_p_action) {
+	  stats.n_max_p_action_changes++;
+	}
       }
       
     }; // struct GtoStrategy</*CAN_RAISE*/true>
@@ -264,8 +303,13 @@ namespace Poker {
       //   penalise the less profitable options.
       // @param leeway is in [0.0, +infinity) - the smaller the leeway the more aggressively we adjust
       //    leeway of 0.0 is not a good idea since it will leave the strategy of the worst option at 0.0.
-      void adjust(double fold_profit, double call_profit, const StrategyAdjustPolicyT& policy) {
+      void adjust(double fold_profit, double call_profit, const StrategyAdjustPolicyT& policy, StrategyAdjustStatsT& stats) {
+	StrategyActionT prev_max_p_action = get_max_p_action(fold_p, call_p);
 	adjust_strategy(fold_profit, call_profit, fold_p, call_p, policy);
+	StrategyActionT max_p_action = get_max_p_action(fold_p, call_p);
+	if(prev_max_p_action != max_p_action) {
+	  stats.n_max_p_action_changes++;
+	}
       }
       
     }; // struct GtoStrategy</*CAN_RAISE*/false>
@@ -458,23 +502,23 @@ namespace Poker {
       GtoStrategy</*CAN_RAISE*/true> strategy;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) {
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy, StrategyAdjustStatsT& stats) {
 	const PlayerEvalT& curr_player_eval = player_evals.get_player_eval(PLAYER_NO);
 
 	double rel_fold_profit = curr_player_eval.fold.eval.rel_player_profit(PLAYER_NO);
 	double rel_call_profit = curr_player_eval.call.eval.rel_player_profit(PLAYER_NO);
 	double rel_raise_profit = curr_player_eval.raise.eval.rel_player_profit(PLAYER_NO);
 
-	strategy.adjust(rel_fold_profit, rel_call_profit, rel_raise_profit, policy);
+	strategy.adjust(rel_fold_profit, rel_call_profit, rel_raise_profit, policy, stats);
 
 	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
-	this->fold.adjust(fold_evals, policy);
+	this->fold.adjust(fold_evals, policy, stats);
 
 	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
-	this->call.adjust(call_evals, policy);
+	this->call.adjust(call_evals, policy, stats);
 
 	auto raise_evals = PlayerEvalsRaiseGetter<N_PLAYERS, PlayerEvalT>::get_raise_evals(player_evals);
-	this->raise.adjust(raise_evals, policy);
+	this->raise.adjust(raise_evals, policy, stats);
       }
     };
     
@@ -497,7 +541,7 @@ namespace Poker {
       static const bool is_leaf = true;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) { /*noop*/ }
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy, StrategyAdjustStatsT& stats) { /*noop*/ }
     };
     
     // Specialisation for all active players called.
@@ -518,7 +562,7 @@ namespace Poker {
       static const bool is_leaf = true;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) { /*noop*/ }
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy, StrategyAdjustStatsT& stats) { /*noop*/ }
     };
     
     // Specialisation for current player already folded
@@ -552,9 +596,9 @@ namespace Poker {
       dead_t _;
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) {
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy, StrategyAdjustStatsT& stats) {
 	auto dead_evals = PlayerEvalsDeadGetter<N_PLAYERS, PlayerEvalT>::get_dead_evals(player_evals);
-	this->_.adjust(dead_evals, policy);
+	this->_.adjust(dead_evals, policy, stats);
       }
       
     };
@@ -584,19 +628,19 @@ namespace Poker {
 
 
       template <typename PlayerEvalT>
-      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy) {
+      void adjust(PlayerEvals<N_PLAYERS, PlayerEvalT> player_evals, const StrategyAdjustPolicyT& policy, StrategyAdjustStatsT& stats) {
 	const PlayerEvalT& curr_player_eval = player_evals.get_player_eval(PLAYER_NO);
 
 	double rel_fold_profit = curr_player_eval.fold.eval.rel_player_profit(PLAYER_NO);
 	double rel_call_profit = curr_player_eval.call.eval.rel_player_profit(PLAYER_NO);
 
-	strategy.adjust(rel_fold_profit, rel_call_profit, policy);
+	strategy.adjust(rel_fold_profit, rel_call_profit, policy, stats);
 
 	auto fold_evals = PlayerEvalsFoldGetter<N_PLAYERS, PlayerEvalT>::get_fold_evals(player_evals);
-	this->fold.adjust(fold_evals, policy);
+	this->fold.adjust(fold_evals, policy, stats);
 
 	auto call_evals = PlayerEvalsCallGetter<N_PLAYERS, PlayerEvalT>::get_call_evals(player_evals);
-	this->call.adjust(call_evals, policy);
+	this->call.adjust(call_evals, policy, stats);
       }
     };
     
