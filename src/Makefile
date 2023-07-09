@@ -1,3 +1,6 @@
+omaha-ev: omaha-ev.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
+	g++ -I ./include -Wall -O3 -o omaha-ev omaha-ev.cpp hand-eval.cpp
+
 holdem-ep: holdem-ep.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
 	g++ -I ./include -Wall -O3 -o holdem-ep holdem-ep.cpp hand-eval.cpp
 
