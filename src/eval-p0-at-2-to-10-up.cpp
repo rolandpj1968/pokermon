@@ -43,7 +43,7 @@ static void eval_p0_up_to_n_up(int n_players) {
 
     auto p0_hole = std::make_pair(Poker::CardT(cards[0]), Poker::CardT(cards[1]));
 
-    auto p0_hole_norm = Poker::holdem_normal(p0_hole.first, p0_hole.second);
+    auto p0_hole_norm = Poker::Normal::holdem_hole_normal(p0_hole.first, p0_hole.second);
     p0_hand_counts[p0_hole_norm]++;
 
     auto flop = std::make_tuple(Poker::CardT(cards[2*n_players]), Poker::CardT(cards[2*n_players + 1]), Poker::CardT(cards[2*n_players + 2]));

@@ -115,6 +115,10 @@ namespace Poker {
     return CardT(card.suit, to_ace_hi(card.rank));
   }
 
+  static inline U8CardT to_u8card(const CardT card) {
+    return U8CardT((u8)((card.rank << 2) + card.suit));
+  }
+
   struct HandT {
     union {
       RankBitsT suits[NSuits];

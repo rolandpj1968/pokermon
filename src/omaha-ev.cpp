@@ -21,11 +21,11 @@ int main() {
     
     auto p0_hole = std::make_tuple(CardT(cards[0+0]), CardT(cards[0+1]), CardT(cards[0+2]), CardT(cards[0+3]));
 				   
-    auto flop = std::make_tuple(CardT(cards[4]), CardT(cards[4 + 1]), CardT(cards[4 + 2]));
-    auto turn = CardT(cards[4 + 3]);
-    auto river = CardT(cards[4 + 4]);
+    // auto flop = std::make_tuple(CardT(cards[4]), CardT(cards[4 + 1]), CardT(cards[4 + 2]));
+    // auto turn = CardT(cards[4 + 3]);
+    // auto river = CardT(cards[4 + 4]);
 
-    auto p0_hole_normal = omaha_hole_normal(std::get<0>(p0_hole), std::get<1>(p0_hole), std::get<2>(p0_hole), std::get<3>(p0_hole));
+    auto p0_hole_normal = Normal::omaha_hole_normal(std::get<0>(p0_hole), std::get<1>(p0_hole), std::get<2>(p0_hole), std::get<3>(p0_hole));
 
     printf("Hole: %c%c/%c%c/%c%c/%c%c - normal %c%c/%c%c/%c%c/%c%c\n",
 	   RANK_CHARS[std::get<0>(p0_hole).rank], SUIT_CHARS[std::get<0>(p0_hole).suit], RANK_CHARS[std::get<1>(p0_hole).rank], SUIT_CHARS[std::get<1>(p0_hole).suit], RANK_CHARS[std::get<2>(p0_hole).rank], SUIT_CHARS[std::get<2>(p0_hole).suit], RANK_CHARS[std::get<3>(p0_hole).rank], SUIT_CHARS[std::get<3>(p0_hole).suit],
@@ -68,7 +68,7 @@ int main() {
 	  U8CardT c3_u8 = U8CardT(c3);
 	  CardT card3 = CardT(c3_u8.suit(), c3_u8.rank());
 
-	  auto hole_normal = omaha_hole_normal(card0, card1, card2, card3);
+	  auto hole_normal = Normal::omaha_hole_normal(card0, card1, card2, card3);
 
 	  omaha_hole_normals.insert(hole_normal);
 	}

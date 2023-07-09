@@ -272,8 +272,8 @@ static void converge_heads_up_preflop_strategies_one_round(LimitRootTwoHandHoleH
     auto p0_hole = std::make_pair(CardT(cards[0+0]), CardT(cards[0+1]));
     auto p1_hole = std::make_pair(CardT(cards[2+0]), CardT(cards[2+1]));
 
-    auto p0_hole_norm = holdem_hole_normal(p0_hole.first, p0_hole.second);
-    auto p1_hole_norm = holdem_hole_normal(p1_hole.first, p1_hole.second);
+    auto p0_hole_norm = Normal::holdem_hole_normal(p0_hole.first, p0_hole.second);
+    auto p1_hole_norm = Normal::holdem_hole_normal(p1_hole.first, p1_hole.second);
 
     if((p0_hole.first.rank == Ace || p0_hole.first.rank == AceLow) && (p0_hole.second.rank == Ace || p0_hole.second.rank == AceLow)) {
       n_p0_aa++;

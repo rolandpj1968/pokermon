@@ -83,8 +83,8 @@ int main() {
     auto p0_hole = std::make_pair(CardT(cards[0+0]), CardT(cards[0+1]));
     auto p1_hole = std::make_pair(CardT(cards[2+0]), CardT(cards[2+1]));
 
-    auto p0_hole_normal = holdem_hole_normal(p0_hole.first, p0_hole.second);
-    auto p1_hole_normal = holdem_hole_normal(p1_hole.first, p1_hole.second);
+    auto p0_hole_normal = Normal::holdem_hole_normal(p0_hole.first, p0_hole.second);
+    auto p1_hole_normal = Normal::holdem_hole_normal(p1_hole.first, p1_hole.second);
 
     auto flop = std::make_tuple(CardT(cards[2*2]), CardT(cards[2*2 + 1]), CardT(cards[2*2 + 2]));
     auto turn = CardT(cards[2*2 + 3]);

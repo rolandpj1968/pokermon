@@ -2,6 +2,7 @@
 #define UTIL_HPP
 
 #include <algorithm>
+#include <functional>
 
 namespace Util {
 

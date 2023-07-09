@@ -82,8 +82,8 @@ int main() {
     p0_hand_counts[std::make_pair(p0_card0, p0_card1)]++;
     p1_hand_counts[std::make_pair(p1_card0, p1_card1)]++;
 
-    auto norm_p0_cards = Poker::holdem_normal(p0_card0, p0_card1);
-    auto norm_p1_cards = Poker::holdem_normal(p1_card0, p1_card1);
+    auto norm_p0_cards = Poker::Normal::holdem_hole_normal(p0_card0, p0_card1);
+    auto norm_p1_cards = Poker::Normal::holdem_hole_normal(p1_card0, p1_card1);
 
     p0_norm_hand_counts[norm_p0_cards]++;
     p1_norm_hand_counts[norm_p1_cards]++;
