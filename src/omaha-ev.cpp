@@ -14,6 +14,8 @@ int main() {
   std::seed_seq seed{2, 3, 5, 7, 13};
   Dealer::DealerT dealer(seed);
 
+  Normal::init_omaha_hold_normal_index();
+
   const int N_DEALS = 16;
 
   for(int deal_no = 0; deal_no < N_DEALS; deal_no++) {
@@ -69,6 +71,11 @@ int main() {
 	  CardT card3 = CardT(c3_u8.suit(), c3_u8.rank());
 
 	  auto hole_normal = Normal::omaha_hole_normal(card0, card1, card2, card3);
+
+	  int hole_index = Normal::omaha_hole_normal_index(card0, card1, card2, card3);
+	  auto hole_normal2 = Normal::omaha_hole_normal_from_index(hole_index);
+
+	  assert(hole_normal == hole_normal2);
 
 	  omaha_hole_normals.insert(hole_normal);
 	}

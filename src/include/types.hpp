@@ -72,6 +72,7 @@ namespace Poker {
 
   // Card represented as a single u8 in [0, 52).
   // For ease of manipulation bottom 2 bits are the suit, and hi bits are the rank.
+  // Aces are low
   struct U8CardT {
     const u8 u8_card;
 
@@ -105,6 +106,10 @@ namespace Poker {
     bool operator<(const CardT& other) const {
       return suit < other.suit || (suit == other.suit && rank < other.rank);
     }
+
+    bool operator==(const CardT& other) const {
+      return suit == other.suit && rank == other.rank;
+    }
   };
 
   static inline CardT to_ace_low(const CardT card) {
@@ -116,7 +121,7 @@ namespace Poker {
   }
 
   static inline U8CardT to_u8card(const CardT card) {
-    return U8CardT((u8)((card.rank << 2) + card.suit));
+    return U8CardT((u8)((to_ace_low(card.rank) << 2) + card.suit));
   }
 
   struct HandT {

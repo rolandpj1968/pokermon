@@ -71,7 +71,7 @@ int Poker::Normal::omaha_hole_normal_index(CardT card0, CardT card1, CardT card2
 
   u8 c0 = to_u8card(card0).u8_card;
   u8 c1 = to_u8card(card1).u8_card;
-  u8 c2 = to_u8card(card1).u8_card;
+  u8 c2 = to_u8card(card2).u8_card;
   u8 c3 = to_u8card(card3).u8_card;
 
   return OMAHA_HOLD_NORMAL_INDEX[c0][c1][c2][c3];

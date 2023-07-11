@@ -70,6 +70,8 @@ namespace Poker {
       add_cards(Diamonds, flop_hand.suits[1], flop_norm_index, flop_norm, 3);
       add_cards(Clubs, flop_hand.suits[2], flop_norm_index, flop_norm, 3);
 
+      assert(flop_norm_index == 3);
+
       return std::make_tuple(flop_norm[0], flop_norm[1], flop_norm[2]);
     }
   
