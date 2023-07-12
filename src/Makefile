@@ -1,8 +1,8 @@
 omaha-ev: omaha-ev.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp normal.cpp Makefile
 	g++ -I ./include -Wall -O3 -o omaha-ev omaha-ev.cpp hand-eval.cpp normal.cpp
 
-holdem-ep: holdem-ep.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
-	g++ -I ./include -Wall -O3 -o holdem-ep holdem-ep.cpp hand-eval.cpp
+holdem-ev: holdem-ev.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
+	g++ -I ./include -Wall -O3 -o holdem-ev holdem-ev.cpp hand-eval.cpp
 
 preflop-gto: preflop-gto.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp gto-common.hpp gto-eval.hpp gto-strategy.hpp Makefile
 	g++ -I ./include -Wall -O3 -o preflop-gto preflop-gto.cpp hand-eval.cpp
@@ -17,4 +17,4 @@ hand-eval: hand-eval.cpp hand-eval.cpp ./include/types.hpp Makefile
 eval-10: eval-p0-at-2-to-10-up.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp Makefile
 	g++ -I ./include -O3 -o eval-10 eval-p0-at-2-to-10-up.cpp hand-eval.cpp
 
-all: omaha-ev holdem-ep preflop-gto dealer hand-eval eval-10
+all: omaha-ev holdem-ev preflop-gto dealer hand-eval eval-10

@@ -10,78 +10,92 @@
 
 using namespace Poker;
 
+// Dump EV by normalised hole cards in descending EV order
+static void dump_action_and_value(std::pair<int, double>* action_and_value, const char* indent) {
+  // pair(EV, index)
+  std::pair<double, int>* ev_by_index = new std::pair<double, int>[Normal::N_OMAHA_HOLE_NORMALS];
+  for (int index = 0; index < (int)Normal::N_OMAHA_HOLE_NORMALS; index++) {
+    ev_by_index[index] = std::make_pair(action_and_value[index].second/action_and_value[index].first, index);
+  }
+
+  std::sort(ev_by_index, ev_by_index + Normal::N_OMAHA_HOLE_NORMALS, std::greater<>());
+
+  for (int i = 0; i < (int)Normal::N_OMAHA_HOLE_NORMALS; i++) {
+    double ev = ev_by_index[i].first;
+    int index = ev_by_index[i].second;
+
+    auto hole_normal = Normal::omaha_hole_normal_from_index(index);
+    printf("%s%c%c/%c%c/%c%c/%c%c - %+5.3lf\n",
+	   indent,
+	   RANK_CHARS[std::get<0>(hole_normal).rank], SUIT_CHARS[std::get<0>(hole_normal).suit], RANK_CHARS[std::get<1>(hole_normal).rank], SUIT_CHARS[std::get<1>(hole_normal).suit], RANK_CHARS[std::get<2>(hole_normal).rank], SUIT_CHARS[std::get<2>(hole_normal).suit], RANK_CHARS[std::get<3>(hole_normal).rank], SUIT_CHARS[std::get<3>(hole_normal).suit],
+	   ev);
+  }
+}
+
+static void add_action_and_value(std::pair<int, double>* action_and_value, int hole_normal_index, double value) {
+  std::pair<int, double>& entry = action_and_value[hole_normal_index];
+
+  entry.first++;
+  entry.second += value;
+}
+
 int main() {
   std::seed_seq seed{2, 3, 5, 7, 13};
   Dealer::DealerT dealer(seed);
 
   Normal::init_omaha_hold_normal_index();
 
-  const int N_DEALS = 16;
+  const int N_DEALS = 1000000;
+
+  double p0_total_value = 0.0;
+  double p1_total_value = 0.0;
+
+  std::pair<int, double>* p0_action_and_value = new std::pair<int, double>[Normal::N_OMAHA_HOLE_NORMALS]();
+  std::pair<int, double>* p1_action_and_value = new std::pair<int, double>[Normal::N_OMAHA_HOLE_NORMALS]();
 
   for(int deal_no = 0; deal_no < N_DEALS; deal_no++) {
-    auto cards = dealer.deal(4+3+1+1);
-    
+    auto cards = dealer.deal(4+4+3+1+1);
+
     auto p0_hole = std::make_tuple(CardT(cards[0+0]), CardT(cards[0+1]), CardT(cards[0+2]), CardT(cards[0+3]));
-				   
-    // auto flop = std::make_tuple(CardT(cards[4]), CardT(cards[4 + 1]), CardT(cards[4 + 2]));
-    // auto turn = CardT(cards[4 + 3]);
-    // auto river = CardT(cards[4 + 4]);
+    auto p1_hole = std::make_tuple(CardT(cards[4+0]), CardT(cards[4+1]), CardT(cards[4+2]), CardT(cards[4+3]));
 
-    auto p0_hole_normal = Normal::omaha_hole_normal(std::get<0>(p0_hole), std::get<1>(p0_hole), std::get<2>(p0_hole), std::get<3>(p0_hole));
+    int p0_hole_normal_index = Normal::omaha_hole_normal_index(std::get<0>(p0_hole), std::get<1>(p0_hole), std::get<2>(p0_hole), std::get<3>(p0_hole));
+    assert(0 <= p0_hole_normal_index && (std::size_t)p0_hole_normal_index < Poker::Normal::N_OMAHA_HOLE_NORMALS);
+    int p1_hole_normal_index = Normal::omaha_hole_normal_index(std::get<0>(p1_hole), std::get<1>(p1_hole), std::get<2>(p1_hole), std::get<3>(p1_hole));
+    assert(0 <= p1_hole_normal_index && (std::size_t)p1_hole_normal_index < Poker::Normal::N_OMAHA_HOLE_NORMALS);
 
-    printf("Hole: %c%c/%c%c/%c%c/%c%c - normal %c%c/%c%c/%c%c/%c%c\n",
-	   RANK_CHARS[std::get<0>(p0_hole).rank], SUIT_CHARS[std::get<0>(p0_hole).suit], RANK_CHARS[std::get<1>(p0_hole).rank], SUIT_CHARS[std::get<1>(p0_hole).suit], RANK_CHARS[std::get<2>(p0_hole).rank], SUIT_CHARS[std::get<2>(p0_hole).suit], RANK_CHARS[std::get<3>(p0_hole).rank], SUIT_CHARS[std::get<3>(p0_hole).suit],
-	   RANK_CHARS[std::get<0>(p0_hole_normal).rank], SUIT_CHARS[std::get<0>(p0_hole_normal).suit], RANK_CHARS[std::get<1>(p0_hole_normal).rank], SUIT_CHARS[std::get<1>(p0_hole_normal).suit], RANK_CHARS[std::get<2>(p0_hole_normal).rank], SUIT_CHARS[std::get<2>(p0_hole_normal).suit], RANK_CHARS[std::get<3>(p0_hole_normal).rank], SUIT_CHARS[std::get<3>(p0_hole_normal).suit]);
+    auto flop = std::make_tuple(CardT(cards[4*2]), CardT(cards[4*2 + 1]), CardT(cards[4*2 + 2]));
+    auto turn = CardT(cards[4*2 + 3]);
+    auto river = CardT(cards[4*2 + 4]);
+
+    auto p0_hand_eval = HandEval::eval_hand_omaha(p0_hole, flop, turn, river);
+    auto p1_hand_eval = HandEval::eval_hand_omaha(p1_hole, flop, turn, river);
+
+    double p0_hand_value = 0.0;
+    double p1_hand_value = 0.0;
     
-  }
-
-  printf("\n");
-
-  std::set<std::tuple<CardT, CardT, CardT, CardT>> omaha_hole_normals;
-  size_t n_omaha_holes = 0;
-
-  for (u8 c0 = 0; c0 < 52; c0++) {
-    U8CardT c0_u8 = U8CardT(c0);
-    CardT card0 = CardT(c0_u8.suit(), c0_u8.rank());
-
-    for (u8 c1 = 0; c1 < 52; c1++) {
-      if (c1 == c0) {
-	continue;
-      }
-      
-      U8CardT c1_u8 = U8CardT(c1);
-      CardT card1 = CardT(c1_u8.suit(), c1_u8.rank());
-    
-      for (u8 c2 = 0; c2 < 52; c2++) {
-	if (c2 == c0 || c2 == c1) {
-	  continue;
-	}
-	
-	U8CardT c2_u8 = U8CardT(c2);
-	CardT card2 = CardT(c2_u8.suit(), c2_u8.rank());
-    
-	for (u8 c3 = 0; c3 < 52; c3++) {
-	  if (c3 == c0 || c3 == c1 || c3 == c2) {
-	    continue;
-	  }
-
-	  n_omaha_holes++;
-	  
-	  U8CardT c3_u8 = U8CardT(c3);
-	  CardT card3 = CardT(c3_u8.suit(), c3_u8.rank());
-
-	  auto hole_normal = Normal::omaha_hole_normal(card0, card1, card2, card3);
-
-	  int hole_index = Normal::omaha_hole_normal_index(card0, card1, card2, card3);
-	  auto hole_normal2 = Normal::omaha_hole_normal_from_index(hole_index);
-
-	  assert(hole_normal == hole_normal2);
-
-	  omaha_hole_normals.insert(hole_normal);
-	}
-      }
+    if(p0_hand_eval > p1_hand_eval) {
+      p0_hand_value = 1.0;
+      p1_hand_value = -1.0;
+    } else if(p1_hand_eval > p0_hand_eval) {
+      p0_hand_value = -1.0;
+      p1_hand_value = 1.0;
     }
+
+    p0_total_value += p0_hand_value;
+    p1_total_value += p1_hand_value;
+
+    add_action_and_value(p0_action_and_value, p0_hole_normal_index, p0_hand_value);
+    add_action_and_value(p1_action_and_value, p1_hole_normal_index, p1_hand_value);
   }
 
-  printf("%zu omaha holes / %zu omaha normal holes\n", n_omaha_holes, omaha_hole_normals.size());
+  printf("%d deals / p0 EV %+4.2lf / p1 EV %+4.2lf\n", N_DEALS, p0_total_value/N_DEALS, p1_total_value/N_DEALS);
+
+  printf("\nPlayer 0:\n\n");
+  dump_action_and_value(p0_action_and_value, "  ");
+  printf("\n\nPlayer 1:\n\n");
+  dump_action_and_value(p1_action_and_value, "  ");
+
+  printf("\n\n");
 }
+
