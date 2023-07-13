@@ -39,10 +39,6 @@ static void add_action_and_value(std::pair<int, double>* action_and_value, int h
   entry.second += value;
 }
 
-static void do_thread_stuff(const std::pair<int, int>& p) {
-  printf("Hallo from thread: %d %d\n", p.first, p.second);
-}
-
 static void evaluate_hands(int n_deals, double* p0_total_value, std::pair<int, double>* p0_action_and_value, double* p1_total_value, std::pair<int, double>* p1_action_and_value, int seed5) {
   std::seed_seq seed{2, 3, 5, 7, seed5};
   Dealer::DealerT dealer(seed);
@@ -85,12 +81,6 @@ static void evaluate_hands(int n_deals, double* p0_total_value, std::pair<int, d
 }
 
 int main(int argc, char* argv[]) {
-  // auto my_p = std::make_pair(1, 2);
-  // std::thread my_thread (do_thread_stuff, my_p);
-  // my_thread.join();
-  
-  // std::seed_seq seed{2, 3, 5, 7, 13};
-  // Dealer::DealerT dealer(seed);
 
   Normal::init_omaha_hold_normal_index();
 
@@ -149,41 +139,6 @@ int main(int argc, char* argv[]) {
       total_p1_action_and_value[j].second += p1_action_and_value_i[j].second;
     }
   }
-  // if (0) for(int deal_no = 0; deal_no < N_DEALS; deal_no++) {
-  //   auto cards = dealer.deal(4+4+3+1+1);
-
-  //   auto p0_hole = std::make_tuple(CardT(cards[0+0]), CardT(cards[0+1]), CardT(cards[0+2]), CardT(cards[0+3]));
-  //   auto p1_hole = std::make_tuple(CardT(cards[4+0]), CardT(cards[4+1]), CardT(cards[4+2]), CardT(cards[4+3]));
-
-  //   int p0_hole_normal_index = Normal::omaha_hole_normal_index(std::get<0>(p0_hole), std::get<1>(p0_hole), std::get<2>(p0_hole), std::get<3>(p0_hole));
-  //   assert(0 <= p0_hole_normal_index && (std::size_t)p0_hole_normal_index < Poker::Normal::N_OMAHA_HOLE_NORMALS);
-  //   int p1_hole_normal_index = Normal::omaha_hole_normal_index(std::get<0>(p1_hole), std::get<1>(p1_hole), std::get<2>(p1_hole), std::get<3>(p1_hole));
-  //   assert(0 <= p1_hole_normal_index && (std::size_t)p1_hole_normal_index < Poker::Normal::N_OMAHA_HOLE_NORMALS);
-
-  //   auto flop = std::make_tuple(CardT(cards[4*2]), CardT(cards[4*2 + 1]), CardT(cards[4*2 + 2]));
-  //   auto turn = CardT(cards[4*2 + 3]);
-  //   auto river = CardT(cards[4*2 + 4]);
-
-  //   auto p0_hand_eval = HandEval::eval_hand_omaha(p0_hole, flop, turn, river);
-  //   auto p1_hand_eval = HandEval::eval_hand_omaha(p1_hole, flop, turn, river);
-
-  //   double p0_hand_value = 0.0;
-  //   double p1_hand_value = 0.0;
-    
-  //   if(p0_hand_eval > p1_hand_eval) {
-  //     p0_hand_value = 1.0;
-  //     p1_hand_value = -1.0;
-  //   } else if(p1_hand_eval > p0_hand_eval) {
-  //     p0_hand_value = -1.0;
-  //     p1_hand_value = 1.0;
-  //   }
-
-  //   p0_total_value += p0_hand_value;
-  //   p1_total_value += p1_hand_value;
-
-  //   add_action_and_value(p0_action_and_value, p0_hole_normal_index, p0_hand_value);
-  //   add_action_and_value(p1_action_and_value, p1_hole_normal_index, p1_hand_value);
-  // }
 
   int total_n_deals = n_threads*n_deals;
 
