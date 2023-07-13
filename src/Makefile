@@ -1,5 +1,5 @@
 omaha-ev: omaha-ev.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp normal.cpp Makefile
-	g++ -I ./include -Wall -O3 -o omaha-ev omaha-ev.cpp hand-eval.cpp normal.cpp
+	g++ -I ./include -Wall -O3 -o omaha-ev omaha-ev.cpp hand-eval.cpp normal.cpp -lpthread
 
 holdem-ev: holdem-ev.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
 	g++ -I ./include -Wall -O3 -o holdem-ev holdem-ev.cpp hand-eval.cpp
