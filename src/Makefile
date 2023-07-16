@@ -1,3 +1,6 @@
+check-hand-eval: check-hand-eval.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
+	g++ -I ./include -Wall -O3 -o check-hand-eval check-hand-eval.cpp hand-eval.cpp
+
 omaha-ev: omaha-ev.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp normal.cpp Makefile
 	g++ -I ./include -Wall -O3 -o omaha-ev omaha-ev.cpp hand-eval.cpp normal.cpp -lpthread
 

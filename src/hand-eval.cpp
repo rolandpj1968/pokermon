@@ -263,7 +263,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
   unique_cards.insert(c5);
   unique_cards.insert(c6);
 
-  assert(unique_cards.size() != 7 && "duplicate cards");
+  assert(unique_cards.size() == 7 && "duplicate cards");
 
   // Highest ranked hand is Straight Flush - Royal Flush is just a special case of this.
   // Check for straight flushes - there can only be one suit with a straight flush.
@@ -406,7 +406,7 @@ static u64 get_straight_hicard_ranks14(u64 ranks14) {
   u64 straight_bits_01 = ranks14 & (ranks14 << 1);
   u64 straight_bits_0123 = straight_bits_01 & (straight_bits_01 << 2);
   // Now has bits set for top-ranks of straights
-  u64 straight_hicard_ranks14 = straight_bits_0123 | (ranks14 << 4);
+  u64 straight_hicard_ranks14 = straight_bits_0123 & (ranks14 << 4);
 
   return straight_hicard_ranks14;
 }
@@ -437,11 +437,11 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT ha
   u64 ranks14_3 = hand.suits[3];
 
   // Aces hi only
-  u64 no_ace_lo_mask = ~ (u64)(1 << AceLow);
-  u64 ranks14_no_ace_lo_0 = ranks14_0  & no_ace_lo_mask;
-  u64 ranks14_no_ace_lo_1 = ranks14_1  & no_ace_lo_mask;
-  u64 ranks14_no_ace_lo_2 = ranks14_2  & no_ace_lo_mask;
-  u64 ranks14_no_ace_lo_3 = ranks14_3  & no_ace_lo_mask;
+  u64 no_ace_lo_mask = ~ ((u64)1 << AceLow);
+  u64 ranks14_no_ace_lo_0 = ranks14_0 & no_ace_lo_mask;
+  u64 ranks14_no_ace_lo_1 = ranks14_1 & no_ace_lo_mask;
+  u64 ranks14_no_ace_lo_2 = ranks14_2 & no_ace_lo_mask;
+  u64 ranks14_no_ace_lo_3 = ranks14_3 & no_ace_lo_mask;
 
   int ranks14_no_ace_lo_count_0 = Util::bitcount(ranks14_no_ace_lo_0);
   int ranks14_no_ace_lo_count_1 = Util::bitcount(ranks14_no_ace_lo_1);
@@ -642,12 +642,12 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT ha
 // @return pair(ranking, 5-characteristic-ranks)
 Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card_fast1(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
   HandT h0 = HandT(c0);
-  HandT h1 = HandT(c0);
-  HandT h2 = HandT(c0);
-  HandT h3 = HandT(c0);
-  HandT h4 = HandT(c0);
-  HandT h5 = HandT(c0);
-  HandT h6 = HandT(c0);
+  HandT h1 = HandT(c1);
+  HandT h2 = HandT(c2);
+  HandT h3 = HandT(c3);
+  HandT h4 = HandT(c4);
+  HandT h5 = HandT(c5);
+  HandT h6 = HandT(c6);
 
   HandT h01 = HandT(h0, h1);
   HandT h23 = HandT(h2, h3);
