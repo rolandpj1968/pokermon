@@ -74,7 +74,7 @@ namespace Poker {
   // For ease of manipulation bottom 2 bits are the suit, and hi bits are the rank.
   // Aces are low
   struct U8CardT {
-    const u8 u8_card;
+    u8 u8_card;
 
     U8CardT(u8 u8_card):
       u8_card(u8_card) {}

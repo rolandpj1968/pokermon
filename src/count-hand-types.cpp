@@ -7,6 +7,9 @@
 
 using namespace Poker;
 
+enum eval_algo_t { slow_eval_algo_t, fast_eval_algo_t };
+		  
+
 int main(int argc, char* argv[]) {
   
   int p0_hand_counts[NHandRankings] = {};
@@ -16,14 +19,14 @@ int main(int argc, char* argv[]) {
   if (argc > 1) {
     n_deals = std::atoi(argv[1]);
   }
-  
-  bool use_fast = false;
+
+  eval_algo_t algo = slow_eval_algo_t;
   if (argc > 2) {
     std::string algo = std::string(argv[2]);
     if (algo == "slow") {
-      use_fast = false;
+      algo = slow_eval_algo_t;
     } else if (algo == "fast") {
-      use_fast = true;
+      algo = fast_eval_algo_t;
     } else {
       assert(false && "unrecognised hand eval algorithm - expexting fast or slow");
     }
@@ -38,7 +41,8 @@ int main(int argc, char* argv[]) {
   Dealer::DealerT dealer(seed);
   
   for(int deal_no = 0; deal_no < n_deals; deal_no++) {
-    auto cards = dealer.deal(2+2+3+1+1);
+    constexpr int N_CARDS = 2+2+3+1+1;
+    auto cards = dealer.deal(cards, n_cards);
     
     auto p0_hole = std::make_pair(CardT(cards[0+0]), CardT(cards[0+1]));
     auto p1_hole = std::make_pair(CardT(cards[2+0]), CardT(cards[2+1]));
@@ -47,8 +51,8 @@ int main(int argc, char* argv[]) {
     auto turn = CardT(cards[2*2 + 3]);
     auto river = CardT(cards[2*2 + 4]);
     
-    auto p0_hand_eval = use_fast ? HandEval::eval_hand_holdem_fast1(p0_hole, flop, turn, river) : HandEval::eval_hand_holdem(p0_hole, flop, turn, river);
-    auto p1_hand_eval = use_fast ? HandEval::eval_hand_holdem_fast1(p1_hole, flop, turn, river) : HandEval::eval_hand_holdem(p1_hole, flop, turn, river);
+    auto p0_hand_eval = (algo = slow_eval_algo_t ? HandEval::eval_hand_holdem(p0_hole, flop, turn, river) : HandEval::eval_hand_holdem_fast1(p0_hole, flop, turn, river);
+    auto p1_hand_eval = (algo = slow_eval_algo_t ? HandEval::eval_hand_holdem(p1_hole, flop, turn, river) : HandEval::eval_hand_holdem_fast1(p1_hole, flop, turn, river);
 
     p0_hand_counts[p0_hand_eval.first]++;
     p1_hand_counts[p1_hand_eval.first]++;

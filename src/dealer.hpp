@@ -35,6 +35,21 @@ namespace Poker {
 
 	return cards;
       }
+      
+      inline void deal(Poker::U8CardT* cards, size_t n) {
+	bool dealt[52] = {};
+
+	size_t n_dealt = 0;
+	while(n_dealt < n) {
+	  int card = single_pack_dist(rng);
+
+	  if(!dealt[card]) {
+	    dealt[card] = true;
+
+	    cards[n_dealt++] = Poker::U8CardT((u8)card);
+	  }
+	}
+      }
     }; // struct DealerT
 
   }// namespace Dealer
