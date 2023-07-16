@@ -54,6 +54,11 @@ int main() {
     }
     if (!(p1_hand_eval == p1_hand_eval_fast1)) {
       printf("Booo - failed p1 eval after %d deals\n", deal_no);
+      dump_deal(p0_hole, p1_hole, flop, turn, river);
+      printf("\n");
+      printf("p1 "); dump_hand_eval(p1_hand_eval); printf(" | "); dump_hand_eval(p1_hand_eval_fast1);
+      printf("\n");
+      printf("\n");
     }
 
     assert(p0_hand_eval == p0_hand_eval_fast1);

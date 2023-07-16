@@ -19,7 +19,7 @@ namespace Poker {
   };
 
   [[maybe_unused]]
-  static const char* SUIT_CHARS = "SHDC";
+  static const char* SUIT_CHARS = "shdc"; // traditionally presented as smalls
 
   enum RankT: u8 {
     AceLow,
@@ -48,7 +48,7 @@ namespace Poker {
   }
 
   [[maybe_unused]]
-  static const char* RANK_CHARS = "a23456789XJQKA";
+  static const char* RANK_CHARS = "a23456789XJQKA";  // traditionally presented as capitals
   
   // Note that Ace appears in bit 0 and bit 13 typically
   typedef u16 RankBitsT;

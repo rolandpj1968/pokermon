@@ -1,3 +1,6 @@
+count-hand-types: count-hand-types.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
+	g++ -I ./include -Wall -O3 -o count-hand-types count-hand-types.cpp hand-eval.cpp
+
 check-hand-eval: check-hand-eval.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp normal.hpp Makefile
 	g++ -I ./include -Wall -O3 -o check-hand-eval check-hand-eval.cpp hand-eval.cpp
 

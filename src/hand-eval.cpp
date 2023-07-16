@@ -23,7 +23,13 @@ HandValueT mkHandValue(const HandT hand) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // @return (true, high-card-rank) is straight else (false, _)
-static std::pair<bool, RankT> eval_straight(const std::set<RankT>& ranks) {
+static std::pair<bool, RankT> eval_straight(const std::set<RankT>& ranks_ace_hi_only) {
+  // Ranks only has ace high - augment with ace low if necessary
+  std::set<RankT> ranks = ranks_ace_hi_only;
+  if (ranks.find(Ace) != ranks.end()) {
+    ranks.insert(AceLow);
+  }
+  
   bool found_straight = false;
   RankT highest_straight_rank = AceLow;
   
@@ -254,14 +260,15 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT>> eval_pair(const s
 // @return pair(ranking, 5-characteristic-ranks)
 Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
   // Make sure all cards are unique
+  // Also standardize on ace high.
   std::set<CardT> unique_cards;
-  unique_cards.insert(c0);
-  unique_cards.insert(c1);
-  unique_cards.insert(c2);
-  unique_cards.insert(c3);
-  unique_cards.insert(c4);
-  unique_cards.insert(c5);
-  unique_cards.insert(c6);
+  unique_cards.insert(to_ace_hi(c0));
+  unique_cards.insert(to_ace_hi(c1));
+  unique_cards.insert(to_ace_hi(c2));
+  unique_cards.insert(to_ace_hi(c3));
+  unique_cards.insert(to_ace_hi(c4));
+  unique_cards.insert(to_ace_hi(c5));
+  unique_cards.insert(to_ace_hi(c6));
 
   assert(unique_cards.size() == 7 && "duplicate cards");
 
