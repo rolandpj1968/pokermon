@@ -76,6 +76,8 @@ namespace Poker {
   struct U8CardT {
     u8 u8_card;
 
+    U8CardT() : u8_card(0) {}
+    
     U8CardT(u8 u8_card):
       u8_card(u8_card) {}
 
@@ -131,16 +133,33 @@ namespace Poker {
     };
     
     // Empty hand
-    HandT(): hand(0) {}
+    HandT() : hand(0) {}
     
     // Construct a hand from a card
-    HandT(const CardT card): hand(0) {
+    HandT(const CardT card) : hand(0) {
       suits[card.suit] = RankBits[card.rank];
+    }
+    
+    // Construct a hand from a card in u8 format
+    HandT(const U8CardT u8card) : hand(0) {
+      suits[u8card.suit()] = RankBits[u8card.rank()];
     }
     
     // Combine two hands
     HandT(const HandT hand1, const HandT hand2):
       hand(hand1.hand | hand2.hand) {}
+
+    // Add a card to a hand
+    HandT& add(CardT card) {
+      suits[card.suit] |= RankBits[card.rank];
+      return *this;
+    }
+    
+    // Add a card in u8 format to a hand
+    HandT& add(U8CardT u8card) {
+      suits[u8card.suit()] |= RankBits[u8card.rank()];
+      return *this;
+    }
     
   };
   

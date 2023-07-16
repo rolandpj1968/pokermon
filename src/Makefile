@@ -23,4 +23,4 @@ hand-eval: hand-eval.cpp hand-eval.cpp ./include/types.hpp Makefile
 eval-10: eval-p0-at-2-to-10-up.cpp dealer.hpp ./include/types.hpp hand-eval.hpp hand-eval.cpp Makefile
 	g++ -I ./include -O3 -o eval-10 eval-p0-at-2-to-10-up.cpp hand-eval.cpp
 
-all: omaha-ev holdem-ev preflop-gto dealer hand-eval eval-10
+all: count-hand-types check-hand-eval omaha-ev holdem-ev preflop-gto dealer hand-eval eval-10
