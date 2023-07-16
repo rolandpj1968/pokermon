@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <map>
@@ -7,6 +8,7 @@
 
 #include "hand-eval.hpp"
 #include "types.hpp"
+#include "util.hpp"
 
 using namespace Poker;
 
@@ -248,9 +250,9 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT>> eval_pair(const s
   return std::make_pair(pair_rank != AceLow, std::make_tuple(pair_rank, kicker, kicker2, kicker3));
 }
 
-// Slow hand eval... 7 hand card like Holdem or each Omaha option.
+// Slow hand eval... 7 card hand like Holdem
 // @return pair(ranking, 5-characteristic-ranks)
-static Poker::HandEval::HandEvalT eval_hand_7card(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
   // Make sure all cards are unique
   std::set<CardT> unique_cards;
   unique_cards.insert(c0);
@@ -261,20 +263,16 @@ static Poker::HandEval::HandEvalT eval_hand_7card(const CardT c0, const CardT c1
   unique_cards.insert(c5);
   unique_cards.insert(c6);
 
-  if(unique_cards.size() != 7) {
-    // We have dups - error!
-    fprintf(stderr, "Duplicate cards in hand_eval()\n");
-    exit(1);
-  }
+  assert(unique_cards.size() != 7 && "duplicate cards");
 
   // Highest ranked hand is Straight Flush - Royal Flush is just a special case of this.
   // Check for straight flushes - there can only be one suit with a straight flush.
   {
-    for(auto suit = Spades; suit < NSuits; suit = (SuitT)(suit+1)) {
+    for (auto suit = Spades; suit < NSuits; suit = (SuitT)(suit+1)) {
       auto straight_flush_eval = eval_straight_flush(unique_cards, suit);
       bool is_straight_flush = straight_flush_eval.first;
       
-      if(is_straight_flush) {
+      if (is_straight_flush) {
 	RankT high_card_rank = straight_flush_eval.second;
 	auto hand_ranks = std::make_tuple((RankT)high_card_rank, (RankT)(high_card_rank-1), (RankT)(high_card_rank-2), (RankT)(high_card_rank-3), (RankT)(high_card_rank-4));
 	
@@ -397,36 +395,303 @@ static Poker::HandEval::HandEvalT eval_hand_7card(const CardT c0, const CardT c1
   }
 }
 
+
 // Slow hand eval...
-Poker::HandEval::HandEvalT Poker::HandEval::eval_hand(const std::pair<CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
-  return eval_hand_7card(player.first, player.second, std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_holdem(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
+  return eval_hand_7_card(hole.first, hole.second, std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+}
+
+// Find straights by bit-wise and (&) of rank bits at 5 adjacent shifts
+static u64 get_straight_hicard_ranks14(u64 ranks14) {
+  u64 straight_bits_01 = ranks14 & (ranks14 << 1);
+  u64 straight_bits_0123 = straight_bits_01 & (straight_bits_01 << 2);
+  // Now has bits set for top-ranks of straights
+  u64 straight_hicard_ranks14 = straight_bits_0123 | (ranks14 << 4);
+
+  return straight_hicard_ranks14;
+}
+
+// Extract the five high ranks from rank bits
+static std::tuple<RankT, RankT, RankT, RankT, RankT> get_five_high_ranks(u64 ranks14) {
+  RankT r0 = (RankT) Util::hibit(ranks14);
+  u64 ranks14_left = Util::removebit(ranks14, (int)r0);
+  RankT r1 = (RankT) Util::hibit(ranks14_left);
+  ranks14_left = Util::removebit(ranks14_left, (int)r1);
+  RankT r2 = (RankT) Util::hibit(ranks14_left);
+  ranks14_left = Util::removebit(ranks14_left, (int)r2);
+  RankT r3 = (RankT) Util::hibit(ranks14_left);
+  ranks14_left = Util::removebit(ranks14_left, (int)r3);
+  RankT r4 = (RankT) Util::hibit(ranks14_left);
+  
+  return std::make_tuple(r0, r1, r2, r3, r4);
+}   
+
+// Faster hand eval... should work for 5 to 9 cards.
+// TODO - return more compact form
+// @return pair(ranking, 5-characteristic-ranks)
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT hand) {
+  // Aces hi and lo
+  u64 ranks14_0 = hand.suits[0];
+  u64 ranks14_1 = hand.suits[1];
+  u64 ranks14_2 = hand.suits[2];
+  u64 ranks14_3 = hand.suits[3];
+
+  // Aces hi only
+  u64 no_ace_lo_mask = ~ (u64)(1 << AceLow);
+  u64 ranks14_no_ace_lo_0 = ranks14_0  & no_ace_lo_mask;
+  u64 ranks14_no_ace_lo_1 = ranks14_1  & no_ace_lo_mask;
+  u64 ranks14_no_ace_lo_2 = ranks14_2  & no_ace_lo_mask;
+  u64 ranks14_no_ace_lo_3 = ranks14_3  & no_ace_lo_mask;
+
+  int ranks14_no_ace_lo_count_0 = Util::bitcount(ranks14_no_ace_lo_0);
+  int ranks14_no_ace_lo_count_1 = Util::bitcount(ranks14_no_ace_lo_1);
+  int ranks14_no_ace_lo_count_2 = Util::bitcount(ranks14_no_ace_lo_2);
+  int ranks14_no_ace_lo_count_3 = Util::bitcount(ranks14_no_ace_lo_3);
+
+  int card_count = ranks14_no_ace_lo_count_0 + ranks14_no_ace_lo_count_1 + ranks14_no_ace_lo_count_2 + ranks14_no_ace_lo_count_3;
+  assert(5 <= card_count && card_count <= 9);
+
+  // Combine the rank counts (without ace lo) and 14-bit ranks (ace hi and low) for each suit, to
+  //   find the suit with the maximum card count, and then the 14-bit ranks of that
+  //   suit for later straight flush evaluation.
+  u64 count_and_ranks14_0 = ((u64)ranks14_no_ace_lo_count_0 << 16) | ranks14_0;
+  u64 count_and_ranks14_1 = ((u64)ranks14_no_ace_lo_count_1 << 16) | ranks14_1;
+  u64 count_and_ranks14_2 = ((u64)ranks14_no_ace_lo_count_2 << 16) | ranks14_2;
+  u64 count_and_ranks14_3 = ((u64)ranks14_no_ace_lo_count_3 << 16) | ranks14_3;
+
+  u64 max_count_and_ranks14_01 = std::max(count_and_ranks14_0, count_and_ranks14_1);
+  u64 max_count_and_ranks14_23 = std::max(count_and_ranks14_2, count_and_ranks14_3);
+
+  u64 max_count_and_ranks14 = std::max(max_count_and_ranks14_01, max_count_and_ranks14_23);
+  int max_suit_count = max_count_and_ranks14 >> 16;
+  u64 flush_ranks14 = max_count_and_ranks14 & 0xffff;
+
+  // If any suit has at least 5 cards, then we have a flush.
+  // For total card count of nine or less (e.g. Hold'em with seven card), there can only be one such suit.
+  bool is_flush = max_suit_count >= 5;
+
+  // Identify all ranks present, ignoring suits, by or'ing (|) all rank bits of all suits
+  u64 ranks14_01 = ranks14_0 | ranks14_1;
+  u64 ranks14_23 = ranks14_2 | ranks14_3;
+  u64 ranks14 = ranks14_01 | ranks14_23;
+
+  // Find straights by bit-wise and (&) of rank bits at 5 adjacent shifts
+  u64 straight_hicard_ranks14 = get_straight_hicard_ranks14(ranks14);
+  
+  bool is_straight = straight_hicard_ranks14 != 0;
+
+  // Check for straight flush (unlikely)
+  if (is_flush && is_straight) {
+    // We have a flush and a straight but not necessarily a straight flush.
+    // Check if the flush suit bits make a straight themselves.
+
+    u64 straight_flush_hicard_ranks14 = get_straight_hicard_ranks14(flush_ranks14);
+    
+    bool is_straight_flush = straight_flush_hicard_ranks14 != 0;
+
+    if (is_straight_flush) {
+      // TODO - cheaper compact ranks
+      RankT high_card_rank = (RankT) Util::hibit(straight_flush_hicard_ranks14);
+      auto hand_ranks = std::make_tuple((RankT)high_card_rank, (RankT)(high_card_rank-1), (RankT)(high_card_rank-2), (RankT)(high_card_rank-3), (RankT)(high_card_rank-4));
+	
+      return std::make_pair(StraightFlush, hand_ranks);
+    }
+  }
+
+  // TODO - could fast-track relatively common hi-card only and/or one-pair by all-ranks count == 7/6 here,
+  //   now that flush and straight have been eliminated.
+
+  // Identify quads by bitwise and (&) of ranks of all suits
+  u64 quad_ranks14_01 = ranks14_0 & ranks14_1;
+  u64 quad_ranks14_23 = ranks14_2 & ranks14_3;
+  u64 quad_ranks14 = quad_ranks14_01 & quad_ranks14_23;
+
+  bool is_quads = (quad_ranks14 != 0);
+
+  if (is_quads) {
+    RankT quads_rank = (RankT) Util::hibit(quad_ranks14);
+
+    // Kicker is the highest remaining card
+    u64 non_quads_ranks14 = Util::removebit(ranks14, (int)quads_rank);
+    RankT kicker_rank = (RankT) Util::hibit(non_quads_ranks14);
+    
+    auto hand_ranks = std::make_tuple(quads_rank, quads_rank, quads_rank, quads_rank, kicker_rank);
+    
+    return std::make_pair(FourOfAKind, hand_ranks);
+  }
+
+  // Ranks with an even card count (0, 2, 4) can be identified as 0 bits in xor (^) of rank bits of all suits.
+  // After eliminating quads, even card counts can only be pairs or 0-count, and we can eliminate 0-count ranks
+  //   using the combined bit-set of ranks of all suits.
+  u64 odd_ranks14_01 = ranks14_0 ^ ranks14_1;
+  u64 odd_ranks14_23 = ranks14_2 ^ ranks14_3;
+  u64 odd_ranks14 = odd_ranks14_01 ^ odd_ranks14_23;
+
+  u64 even_ranks14 = ~odd_ranks14;
+
+  u64 zero_count_ranks14 = ~ranks14;
+
+  u64 pair_ranks14 = even_ranks14 & ~zero_count_ranks14;
+
+  // Trips are identified by a brute force evaluation - would be nice if there were a better way.
+  u64 trips_ranks14_012 = ranks14_0 & ranks14_1 & ranks14_2 & ~ranks14_3;
+  u64 trips_ranks14_013 = ranks14_0 & ranks14_1 & ~ranks14_2 & ranks14_3;
+  u64 trips_ranks14_023 = ranks14_0 & ~ranks14_1 & ranks14_2 & ranks14_3;
+  u64 trips_ranks14_123 = ~ranks14_0 & ranks14_1 & ranks14_2 & ranks14_3;
+
+  u64 trips_ranks14 = trips_ranks14_012 | trips_ranks14_013 | trips_ranks14_023 | trips_ranks14_123;
+  u64 trips_ranks14_no_ace_lo = trips_ranks14 & no_ace_lo_mask;
+  int trips_count = Util::bitcount(trips_ranks14_no_ace_lo);
+
+  bool has_trips = trips_ranks14 != 0;
+  bool has_pair = pair_ranks14 != 0;
+
+  // If we have multiple trips, this is actually (also) a full house, using (only) two of the second trips rank.
+  bool is_full_house = has_trips && (trips_count > 1 || has_pair);
+
+  if (is_full_house) {
+    RankT trips_rank = (RankT) Util::hibit(trips_ranks14);
+    RankT pair_rank;
+    if (trips_count > 1) {
+      // Second trips rank is used for the pair in the full house
+      u64 trips_ranks14_left = Util::removebit(trips_ranks14, (int)trips_rank);
+      pair_rank = (RankT) Util::hibit(trips_ranks14_left);
+    } else {
+      // Highest pair completes the full house
+      pair_rank = (RankT) Util::hibit(pair_ranks14);
+    }
+    
+    auto hand_ranks = std::make_tuple(trips_rank, trips_rank, trips_rank, pair_rank, pair_rank);
+    
+    return std::make_pair(FullHouse, hand_ranks);
+  }
+
+  // With quads and full house out of the way, back to flush and straight
+
+  if (is_flush) {
+    // Flush is characterized by the five (high) cards involved.
+    auto hand_ranks = get_five_high_ranks(flush_ranks14);
+    
+    return std::make_pair(Flush, hand_ranks);
+  }
+
+  if (is_straight) {
+    RankT high_card_rank = (RankT) Util::hibit(straight_hicard_ranks14);
+    auto hand_ranks = std::make_tuple((RankT)high_card_rank, (RankT)(high_card_rank-1), (RankT)(high_card_rank-2), (RankT)(high_card_rank-3), (RankT)(high_card_rank-4));
+      
+    return std::make_pair(Straight, hand_ranks);
+  }
+
+  if (has_trips) {
+    RankT trips_rank = (RankT) Util::hibit(trips_ranks14);
+
+    // Two kicker ranks are highest cards excluding the trips rank.
+    // At this stage there are no (other) trips or pairs.
+    u64 ranks14_left = Util::removebit(ranks14, (int)trips_rank);
+    RankT kicker_rank = (RankT) Util::hibit(ranks14_left);
+    ranks14_left = Util::removebit(ranks14_left, (int)kicker_rank);
+    RankT kicker2_rank = (RankT) Util::hibit(ranks14_left);
+
+    auto hand_ranks = std::make_tuple(trips_rank, trips_rank, trips_rank, kicker_rank, kicker2_rank);
+
+    return std::make_pair(Set, hand_ranks);
+  }
+
+  if (has_pair) {
+    RankT pair_rank = (RankT) Util::hibit(pair_ranks14);
+    // There might be a second pair - but don't count ace hi and lo
+    u64 pair_ranks14_left = Util::removebit(pair_ranks14, (int)pair_rank) & no_ace_lo_mask;
+
+    // Used for pair and two-pair
+    u64 ranks14_left = Util::removebit(ranks14, (int)pair_rank);
+
+    bool has_second_pair = pair_ranks14_left != 0;
+
+    if (has_second_pair) {
+      RankT second_pair_rank = (RankT) Util::hibit(pair_ranks14_left);
+      ranks14_left = Util::removebit(ranks14_left, (int)second_pair_rank);
+
+      // One kicker - remaining high card
+      RankT kicker_rank = (RankT) Util::hibit(ranks14_left);
+
+      auto hand_ranks = std::make_tuple(pair_rank, pair_rank, second_pair_rank, second_pair_rank, kicker_rank);
+
+      return std::make_pair(TwoPair, hand_ranks);
+      
+    } else {
+      // Three kickers - remaining three highest ranks
+      RankT kicker_rank = (RankT) Util::hibit(ranks14_left);
+      ranks14_left = Util::removebit(ranks14_left, (int)kicker_rank);
+      RankT kicker2_rank = (RankT) Util::hibit(ranks14_left);
+      ranks14_left = Util::removebit(ranks14_left, (int)kicker2_rank);
+      RankT kicker3_rank = (RankT) Util::hibit(ranks14_left);
+      
+      auto hand_ranks = std::make_tuple(pair_rank, pair_rank, kicker_rank, kicker2_rank, kicker3_rank);
+
+      return std::make_pair(Pair, hand_ranks);
+    }
+  }
+
+  // High card(s) only
+  auto hand_ranks = get_five_high_ranks(ranks14);
+  
+  return std::make_pair(HighCard, hand_ranks);
+}
+
+// Faster hand eval... 7 hand card like Holdem
+// @return pair(ranking, 5-characteristic-ranks)
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card_fast1(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
+  HandT h0 = HandT(c0);
+  HandT h1 = HandT(c0);
+  HandT h2 = HandT(c0);
+  HandT h3 = HandT(c0);
+  HandT h4 = HandT(c0);
+  HandT h5 = HandT(c0);
+  HandT h6 = HandT(c0);
+
+  HandT h01 = HandT(h0, h1);
+  HandT h23 = HandT(h2, h3);
+  HandT h45 = HandT(h4, h5);
+
+  HandT h0123 = HandT(h01, h23);
+  HandT h456 = HandT(h45, h6);
+
+  HandT h0123456 = HandT(h0123, h456);
+
+  return eval_hand_5_to_9_card_fast1(h0123456);
+}
+
+// Faster hand eval...
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_holdem_fast1(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
+  return Poker::HandEval::eval_hand_7_card_fast1(hole.first, hole.second, std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
 }
 
 // Slow hand eval for Omaha...
-Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_omaha(const std::tuple<CardT, CardT, CardT, CardT> player, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
-  auto best_hand_eval = eval_hand_7card(std::get<0>(player), std::get<1>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+// This is broken - Omaha hands _have_ to include exactly two hole cards.
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_omaha(const std::tuple<CardT, CardT, CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
+  auto best_hand_eval = eval_hand_7_card(std::get<0>(hole), std::get<1>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
 
-  auto hand_eval_0_2 = eval_hand_7card(std::get<0>(player), std::get<2>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  auto hand_eval_0_2 = eval_hand_7_card(std::get<0>(hole), std::get<2>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
   if (best_hand_eval < hand_eval_0_2) {
     best_hand_eval = hand_eval_0_2;
   }
 
-  auto hand_eval_0_3 = eval_hand_7card(std::get<0>(player), std::get<3>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  auto hand_eval_0_3 = eval_hand_7_card(std::get<0>(hole), std::get<3>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
   if (best_hand_eval < hand_eval_0_3) {
     best_hand_eval = hand_eval_0_3;
   }
 
-  auto hand_eval_1_2 = eval_hand_7card(std::get<1>(player), std::get<2>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  auto hand_eval_1_2 = eval_hand_7_card(std::get<1>(hole), std::get<2>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
   if (best_hand_eval < hand_eval_1_2) {
     best_hand_eval = hand_eval_1_2;
   }
 
-  auto hand_eval_1_3 = eval_hand_7card(std::get<1>(player), std::get<3>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  auto hand_eval_1_3 = eval_hand_7_card(std::get<1>(hole), std::get<3>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
   if (best_hand_eval < hand_eval_1_3) {
     best_hand_eval = hand_eval_1_3;
   }
 
-  auto hand_eval_2_3 = eval_hand_7card(std::get<2>(player), std::get<3>(player), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+  auto hand_eval_2_3 = eval_hand_7_card(std::get<2>(hole), std::get<3>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
   if (best_hand_eval < hand_eval_2_3) {
     best_hand_eval = hand_eval_2_3;
   }

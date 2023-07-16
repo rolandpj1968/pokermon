@@ -100,8 +100,8 @@ int main() {
     Poker::CardT turn(cards[7]);
     Poker::CardT river(cards[8]);
 
-    auto p0_eval = Poker::HandEval::eval_hand(p0_cards, flop, turn, river);
-    auto p1_eval = Poker::HandEval::eval_hand(p1_cards, flop, turn, river);
+    auto p0_eval = Poker::HandEval::eval_hand_holdem(p0_cards, flop, turn, river);
+    auto p1_eval = Poker::HandEval::eval_hand_holdem(p1_cards, flop, turn, river);
 
     if(p0_eval < p1_eval) {
       n_p1_win++;
