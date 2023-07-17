@@ -9,7 +9,6 @@
 namespace Poker {
   namespace Dealer {
     // Random card dealer
-
     struct DealerT {
       std::mt19937 rng;
       std::uniform_int_distribution<int> single_pack_dist;
