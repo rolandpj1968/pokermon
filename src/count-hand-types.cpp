@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     n_deals = std::atoi(argv[1]);
   }
   
-  eval_algo_t algo = slow_eval_algo_t;
+  eval_algo_t algo = fast_eval_algo_t;
   if (argc > 2) {
     std::string algo_string = std::string(argv[2]);
     bool algo_found = false;
