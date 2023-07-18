@@ -82,7 +82,7 @@ static void evaluate_hands(int n_deals, double* p0_total_value, std::pair<int, d
 
 int main(int argc, char* argv[]) {
 
-  Normal::init_omaha_hold_normal_index();
+  Normal::init_omaha_hole_normal_index();
 
   int n_deals = 1000000;
   int n_threads = 1;

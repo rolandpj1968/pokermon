@@ -674,33 +674,68 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_holdem_fast1(const std::pa
 }
 
 // Slow hand eval for Omaha...
-// This is broken - Omaha hands _have_ to include exactly two hole cards.
+// Omaha hands _have_ to include exactly two hole cards and three table cards.
+// Here we iterate over all 60 possible combo's - select 2 from 4 times select 3 from 5
 Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_omaha(const std::tuple<CardT, CardT, CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
-  auto best_hand_eval = eval_hand_7_card(std::get<0>(hole), std::get<1>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
 
-  auto hand_eval_0_2 = eval_hand_7_card(std::get<0>(hole), std::get<2>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
-  if (best_hand_eval < hand_eval_0_2) {
-    best_hand_eval = hand_eval_0_2;
-  }
+  CardT hole0 = std::get<0>(hole);
+  CardT hole1 = std::get<1>(hole);
+  CardT hole2 = std::get<2>(hole);
+  CardT hole3 = std::get<3>(hole);
 
-  auto hand_eval_0_3 = eval_hand_7_card(std::get<0>(hole), std::get<3>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
-  if (best_hand_eval < hand_eval_0_3) {
-    best_hand_eval = hand_eval_0_3;
-  }
+  std::pair<CardT, CardT> hole_card_pairs[6] = {
+    std::make_pair(hole0, hole1),
+    std::make_pair(hole0, hole2),
+    std::make_pair(hole0, hole3),
+    std::make_pair(hole1, hole2),
+    std::make_pair(hole1, hole3),
+    std::make_pair(hole2, hole3),
+  };
 
-  auto hand_eval_1_2 = eval_hand_7_card(std::get<1>(hole), std::get<2>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
-  if (best_hand_eval < hand_eval_1_2) {
-    best_hand_eval = hand_eval_1_2;
-  }
+  
+  CardT table0 = std::get<0>(flop);
+  CardT table1 = std::get<1>(flop);
+  CardT table2 = std::get<2>(flop);
+  CardT table3 = turn;
+  CardT table4 = river;
 
-  auto hand_eval_1_3 = eval_hand_7_card(std::get<1>(hole), std::get<3>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
-  if (best_hand_eval < hand_eval_1_3) {
-    best_hand_eval = hand_eval_1_3;
-  }
+  std::tuple<CardT, CardT, CardT> table_card_triples[10] = {
+    std::make_tuple(table0, table1, table2),
+    std::make_tuple(table0, table1, table3),
+    std::make_tuple(table0, table1, table4),
+    std::make_tuple(table0, table2, table3),
+    std::make_tuple(table0, table2, table4),
+    std::make_tuple(table0, table3, table4),
+    std::make_tuple(table1, table2, table3),
+    std::make_tuple(table1, table2, table4),
+    std::make_tuple(table1, table3, table4),
+    std::make_tuple(table2, table3, table4),
+  };
 
-  auto hand_eval_2_3 = eval_hand_7_card(std::get<2>(hole), std::get<3>(hole), std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
-  if (best_hand_eval < hand_eval_2_3) {
-    best_hand_eval = hand_eval_2_3;
+  bool have_hand_eval = false;
+  Poker::HandEval::HandEvalT best_hand_eval;
+
+  for (int table_card_triple_no = 0; table_card_triple_no < 10; table_card_triple_no++) {
+      
+    std::tuple<CardT, CardT, CardT> table_card_triple = table_card_triples[table_card_triple_no];
+
+    HandT table_cards_hand = HandT(std::get<0>(table_card_triple)).add(std::get<1>(table_card_triple)).add(std::get<2>(table_card_triple));
+
+    for (int hole_card_pair_no = 0; hole_card_pair_no < 6; hole_card_pair_no++) {
+
+      std::pair<CardT, CardT> hole_card_pair = hole_card_pairs[hole_card_pair_no];
+
+      HandT hand = table_cards_hand;
+      hand.add(hole_card_pair.first);
+      hand.add(hole_card_pair.second);
+
+      auto hand_eval = eval_hand_5_to_9_card_fast1(hand);
+
+      if (!have_hand_eval || best_hand_eval < hand_eval) {
+	best_hand_eval = hand_eval;
+	have_hand_eval = true;
+      }
+    }
   }
 
   return best_hand_eval;

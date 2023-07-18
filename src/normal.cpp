@@ -9,11 +9,11 @@
 
 using namespace Poker;
 
-static bool OMAHA_HOLD_NORMAL_INDEX_INITED = false;
-static int OMAHA_HOLD_NORMAL_INDEX[52][52][52][52];
+static bool OMAHA_HOLE_NORMAL_INDEX_INITED = false;
+static int OMAHA_HOLE_NORMAL_INDEX[52][52][52][52];
 static std::tuple<CardT, CardT, CardT, CardT> OMAHA_HOLE_NORMAL_FROM_INDEX[Poker::Normal::N_OMAHA_HOLE_NORMALS];
 
-void Poker::Normal::init_omaha_hold_normal_index() {
+void Poker::Normal::init_omaha_hole_normal_index() {
   std::map<std::tuple<CardT, CardT, CardT, CardT>, int> omaha_hole_normal_to_index;
   int next_index = 0;
 
@@ -56,29 +56,29 @@ void Poker::Normal::init_omaha_hold_normal_index() {
 	    }
 	  }
 
-	  OMAHA_HOLD_NORMAL_INDEX[c0][c1][c2][c3] = index;
+	  OMAHA_HOLE_NORMAL_INDEX[c0][c1][c2][c3] = index;
 	}
       }
     }
   }
 
   assert(next_index == N_OMAHA_HOLE_NORMALS);
-  OMAHA_HOLD_NORMAL_INDEX_INITED = true;
+  OMAHA_HOLE_NORMAL_INDEX_INITED = true;
 }
 
 int Poker::Normal::omaha_hole_normal_index(CardT card0, CardT card1, CardT card2, CardT card3) {
-  assert(OMAHA_HOLD_NORMAL_INDEX_INITED);
+  assert(OMAHA_HOLE_NORMAL_INDEX_INITED);
 
   u8 c0 = to_u8card(card0).u8_card;
   u8 c1 = to_u8card(card1).u8_card;
   u8 c2 = to_u8card(card2).u8_card;
   u8 c3 = to_u8card(card3).u8_card;
 
-  return OMAHA_HOLD_NORMAL_INDEX[c0][c1][c2][c3];
+  return OMAHA_HOLE_NORMAL_INDEX[c0][c1][c2][c3];
 }
 
 std::tuple<CardT, CardT, CardT, CardT> Poker::Normal::omaha_hole_normal_from_index(int index) {
-  assert(OMAHA_HOLD_NORMAL_INDEX_INITED);
+  assert(OMAHA_HOLE_NORMAL_INDEX_INITED);
   assert(0 <= index && (std::size_t)index < Poker::Normal::N_OMAHA_HOLE_NORMALS);
 
   return OMAHA_HOLE_NORMAL_FROM_INDEX[index];

@@ -22,7 +22,7 @@ namespace Poker {
     extern HandEvalT eval_hand_7_card_fast1(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6);
     extern HandEvalT eval_hand_holdem_fast1(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
     
-    // Slow hand eval for Omaha... [curently broken]
+    // Slow hand eval for Omaha...
     extern HandEvalT eval_hand_omaha(const std::tuple<CardT, CardT, CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
   }
 }

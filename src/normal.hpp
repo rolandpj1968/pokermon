@@ -134,10 +134,10 @@ namespace Poker {
     const int INVALID_OMAHA_HOLE_NORMAL_INDEX = -1;
 
     // Call before using omaha_hole_normal_index() or omaha_hole_normal_from_index()
-    extern void init_omaha_hold_normal_index();
-    // @return index in [0, N_OMAHA_HOLD_NORMALS) of normalised Omaha hole cards
+    extern void init_omaha_hole_normal_index();
+    // @return index in [0, N_OMAHA_HOLE_NORMALS) of normalised Omaha hole cards
     extern int omaha_hole_normal_index(CardT card0, CardT card1, CardT card2, CardT card3);
-    // @return normalised Omaha hole cards for given index in [0, N_OMAHA_HOLD_NORMALS)
+    // @return normalised Omaha hole cards for given index in [0, N_OMAHA_HOLE_NORMALS)
     extern std::tuple<CardT, CardT, CardT, CardT> omaha_hole_normal_from_index(int index);
 
   } // namespace Normal
