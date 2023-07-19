@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
       auto river = CardT(cards[2*n_players + 4]);
 
       for (int i = 0; i < n_players; i++) {
-	player_hand_evals[i] = (algo == slow_eval_algo_t) ? HandEval::eval_hand_holdem(player_holes[i], flop, turn, river) : HandEval::eval_hand_holdem_fast1(player_holes[i], flop, turn, river);
+	player_hand_evals[i] = (algo == slow_eval_algo_t) ? HandEval::eval_hand_holdem_slow(player_holes[i], flop, turn, river) : HandEval::eval_hand_holdem_fast1(player_holes[i], flop, turn, river);
       }
     }
 

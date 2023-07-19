@@ -38,8 +38,8 @@ int main() {
     auto turn = CardT(cards[2*2 + 3]);
     auto river = CardT(cards[2*2 + 4]);
 
-    auto p0_hand_eval = HandEval::eval_hand_holdem(p0_hole, flop, turn, river);
-    auto p1_hand_eval = HandEval::eval_hand_holdem(p1_hole, flop, turn, river);
+    auto p0_hand_eval = HandEval::eval_hand_holdem_slow(p0_hole, flop, turn, river);
+    auto p1_hand_eval = HandEval::eval_hand_holdem_slow(p1_hole, flop, turn, river);
 
     auto p0_hand_eval_fast1 = HandEval::eval_hand_holdem_fast1(p0_hole, flop, turn, river);
     auto p1_hand_eval_fast1 = HandEval::eval_hand_holdem_fast1(p1_hole, flop, turn, river);

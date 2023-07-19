@@ -50,7 +50,7 @@ static void eval_p0_up_to_n_up(int n_players) {
     auto turn = Poker::CardT(cards[2*n_players + 3]);
     auto river = Poker::CardT(cards[2*n_players + 4]);
 
-    auto p0_hand_eval = Poker::HandEval::eval_hand_holdem(p0_hole, flop, turn, river);
+    auto p0_hand_eval = Poker::HandEval::eval_hand_holdem_slow(p0_hole, flop, turn, river);
 
     // Before we compare to other players, player 0 has the best hand!
     bool is_player0_best = true;
@@ -68,7 +68,7 @@ static void eval_p0_up_to_n_up(int n_players) {
 
       auto p_hole = std::make_pair(cards[2*player_no], cards[2*player_no + 1]);
 
-      auto p_hand_eval = Poker::HandEval::eval_hand_holdem(p_hole, flop, turn, river);
+      auto p_hand_eval = Poker::HandEval::eval_hand_holdem_slow(p_hole, flop, turn, river);
 
       if(p0_hand_eval < p_hand_eval) {
 	// Oops - player 0 is no longer the best

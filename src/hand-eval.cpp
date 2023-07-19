@@ -23,7 +23,7 @@ HandValueT mkHandValue(const HandT hand) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // @return (true, high-card-rank) is straight else (false, _)
-static std::pair<bool, RankT> eval_straight(const std::set<RankT>& ranks_ace_hi_only) {
+static std::pair<bool, RankT> eval_straight_slow(const std::set<RankT>& ranks_ace_hi_only) {
   // Ranks only has ace high - augment with ace low if necessary
   std::set<RankT> ranks = ranks_ace_hi_only;
   if (ranks.find(Ace) != ranks.end()) {
@@ -51,7 +51,7 @@ static std::pair<bool, RankT> eval_straight(const std::set<RankT>& ranks_ace_hi_
 
 // @return ranks of the given cards filtered by the given suit
 // Expand Ace/AceLow to _both_ Ace and AceLow
-std::set<RankT> filter_by_suit(const std::set<CardT>& cards, SuitT suit) {
+std::set<RankT> filter_by_suit_slow(const std::set<CardT>& cards, SuitT suit) {
   std::set<RankT> suited_ranks;
   for(auto it = cards.begin(); it != cards.end(); it++) {
     CardT card = *it;
@@ -68,15 +68,15 @@ std::set<RankT> filter_by_suit(const std::set<CardT>& cards, SuitT suit) {
 }
 
 // @return (true, high-card-rank) if straight flush else (false, _)
-static std::pair<bool, RankT> eval_straight_flush(const std::set<CardT>& cards, SuitT suit) {
+static std::pair<bool, RankT> eval_straight_flush_slow(const std::set<CardT>& cards, SuitT suit) {
   // Filter the cards by the given suit
-  auto suited_ranks = filter_by_suit(cards, suit);
+  auto suited_ranks = filter_by_suit_slow(cards, suit);
 
-  return eval_straight(suited_ranks);
+  return eval_straight_slow(suited_ranks);
 }
 
 // @return map: rank->count
-static std::map<RankT, int> get_rank_counts(const std::set<CardT>& cards) {
+static std::map<RankT, int> get_rank_counts_slow(const std::set<CardT>& cards) {
   // Count each rank - but Aces are always high.
   std::map<RankT, int> rank_counts;
   for(auto it = cards.begin(); it != cards.end(); it++) {
@@ -92,9 +92,9 @@ static std::map<RankT, int> get_rank_counts(const std::set<CardT>& cards) {
 
 // Only valid if there is no higher eval
 // @return (true, (quads-rank, kicker_rank)) if four of a kind else (false, _)
-static std::pair<bool, std::pair<RankT, RankT>> eval_four_of_a_kind(const std::set<CardT>& cards) {
+static std::pair<bool, std::pair<RankT, RankT>> eval_four_of_a_kind_slow(const std::set<CardT>& cards) {
   // Count each rank - but Aces are always high.
-  auto rank_counts = get_rank_counts(cards);
+  auto rank_counts = get_rank_counts_slow(cards);
 
   // Find the highest quads and highest (non-quads) kicker.
   RankT highest_kicker = AceLow;
@@ -115,7 +115,7 @@ static std::pair<bool, std::pair<RankT, RankT>> eval_four_of_a_kind(const std::s
 
 // Only valid if there is no higher eval
 // @return (true, (trips-rank, pair_rank)) if full house else (false, _)
-static std::pair<bool, std::pair<RankT, RankT>> eval_full_house(const std::set<CardT>& cards) {
+static std::pair<bool, std::pair<RankT, RankT>> eval_full_house_slow(const std::set<CardT>& cards) {
   // Count each rank - but Aces are always high.
   std::map<RankT, int> rank_counts;
   for(auto it = cards.begin(); it != cards.end(); it++) {
@@ -147,9 +147,9 @@ static std::pair<bool, std::pair<RankT, RankT>> eval_full_house(const std::set<C
 
 // Only valid if there is no higher eval
 // @return (true, (hi-card, 2nd-hi-card, ..., 5th-hi-card)) if flush else (false, _)
-static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_flush(const std::set<CardT>& cards, SuitT suit) {
+static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_flush_slow(const std::set<CardT>& cards, SuitT suit) {
   // Filter the cards by the given suit
-  auto suited_ranks = filter_by_suit(cards, suit);
+  auto suited_ranks = filter_by_suit_slow(cards, suit);
   // Remove AceLow otherwise we count two aces
   suited_ranks.erase(AceLow);
 
@@ -168,21 +168,21 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT, RankT>> eval_flush
 
 // Only valid if there is no higher eval
 // @return (true, high-card-rank) if straight else (false, _)
-static std::pair<bool, RankT> eval_straight(const std::set<CardT>& cards) {
+static std::pair<bool, RankT> eval_straight_slow(const std::set<CardT>& cards) {
   // Translate cards to ranks
   std::set<RankT> ranks;
   for(auto it = cards.begin(); it != cards.end(); it++) {
     ranks.insert(it->rank);
   }
 
-  return eval_straight(ranks);
+  return eval_straight_slow(ranks);
 }
 
 // Only valid if there is no higher eval
 // @return (true, (trips-rank, kicker, kicker2) if trips else (false, _)
-static std::pair<bool, std::tuple<RankT, RankT, RankT>> eval_trips(const std::set<CardT>& cards) {
+static std::pair<bool, std::tuple<RankT, RankT, RankT>> eval_trips_slow(const std::set<CardT>& cards) {
   // Count each rank - but Aces are always high.
-  auto rank_counts = get_rank_counts(cards);
+  auto rank_counts = get_rank_counts_slow(cards);
 
   // Find the highest set and highest two (non-set) kickers.
   RankT trips_rank = AceLow;
@@ -205,9 +205,9 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT>> eval_trips(const std::se
 
 // Only valid if there is no higher eval
 // @return (true, (hi-pair-rank, lo-pair-rank, kicker) if two-pairs else (false, _)
-static std::pair<bool, std::tuple<RankT, RankT, RankT>> eval_two_pair(const std::set<CardT>& cards) {
+static std::pair<bool, std::tuple<RankT, RankT, RankT>> eval_two_pair_slow(const std::set<CardT>& cards) {
   // Count each rank - but Aces are always high.
-  auto rank_counts = get_rank_counts(cards);
+  auto rank_counts = get_rank_counts_slow(cards);
 
   // Find the highest two pairs and highest kicker.
   RankT hi_pair_rank = AceLow;
@@ -231,9 +231,9 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT>> eval_two_pair(const std:
 
 // Only valid if there is no higher eval
 // @return (true, (pair-rank, kicker, kicker2, kicker3) if pair else (false, _)
-static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT>> eval_pair(const std::set<CardT>& cards) {
+static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT>> eval_pair_slow(const std::set<CardT>& cards) {
   // Count each rank - but Aces are always high.
-  auto rank_counts = get_rank_counts(cards);
+  auto rank_counts = get_rank_counts_slow(cards);
 
   // Find the highest pair and highest three kickers.
   RankT pair_rank = AceLow;
@@ -258,7 +258,7 @@ static std::pair<bool, std::tuple<RankT, RankT, RankT, RankT>> eval_pair(const s
 
 // Slow hand eval... 7 card hand like Holdem
 // @return pair(ranking, 5-characteristic-ranks)
-Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card_slow(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
   // Make sure all cards are unique
   // Also standardize on ace high.
   std::set<CardT> unique_cards;
@@ -276,7 +276,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
   // Check for straight flushes - there can only be one suit with a straight flush.
   {
     for (auto suit = Spades; suit < NSuits; suit = (SuitT)(suit+1)) {
-      auto straight_flush_eval = eval_straight_flush(unique_cards, suit);
+      auto straight_flush_eval = eval_straight_flush_slow(unique_cards, suit);
       bool is_straight_flush = straight_flush_eval.first;
       
       if (is_straight_flush) {
@@ -290,7 +290,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
 
   // Next highest ranked hand is Four of a Kind
   {
-    auto four_of_a_kind_eval = eval_four_of_a_kind(unique_cards);
+    auto four_of_a_kind_eval = eval_four_of_a_kind_slow(unique_cards);
     bool is_four_of_a_kind = four_of_a_kind_eval.first;
     
     if(is_four_of_a_kind) {
@@ -306,7 +306,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
 
   // Next highest ranked hand is a Full House
   {
-    auto full_house_eval = eval_full_house(unique_cards);
+    auto full_house_eval = eval_full_house_slow(unique_cards);
     bool is_full_house = full_house_eval.first;
     
     if(is_full_house) {
@@ -324,7 +324,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
   // Check for flush in each suit - there can only be one suit with a straight flush.
   {
     for(auto suit = Spades; suit < NSuits; suit = (SuitT)(suit+1)) {
-      auto flush_eval = eval_flush(unique_cards, suit);
+      auto flush_eval = eval_flush_slow(unique_cards, suit);
       bool is_flush = flush_eval.first;
       
       if(is_flush) {
@@ -335,7 +335,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
   
   // Next highest ranked hand is a Straight
   {
-    auto straight_eval = eval_straight(unique_cards);
+    auto straight_eval = eval_straight_slow(unique_cards);
     bool is_straight = straight_eval.first;
     
     if(is_straight) {
@@ -348,7 +348,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
 
   // Next highest ranked hand is Three of a Kind aka a Set aka Trips
   {
-    auto trips_eval = eval_trips(unique_cards);
+    auto trips_eval = eval_trips_slow(unique_cards);
     bool is_trips = trips_eval.first;
     
     if(is_trips) {
@@ -362,7 +362,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
   
   // Next highest ranked hand is Two Pairs
   {
-    auto two_pair_eval = eval_two_pair(unique_cards);
+    auto two_pair_eval = eval_two_pair_slow(unique_cards);
     bool is_two_pair = two_pair_eval.first;
     
     if(is_two_pair) {
@@ -376,7 +376,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
 
   // Next highest ranked hand is a Pair
   {
-    auto pair_eval = eval_pair(unique_cards);
+    auto pair_eval = eval_pair_slow(unique_cards);
     bool is_pair = pair_eval.first;
     
     if(is_pair) {
@@ -391,7 +391,7 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
 
   // We got nothing
   {
-    auto ranks_counts = get_rank_counts(unique_cards);
+    auto ranks_counts = get_rank_counts_slow(unique_cards);
     auto it = ranks_counts.rbegin();
     RankT r0 = (it++)->first;
     RankT r1 = (it++)->first;
@@ -404,8 +404,8 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card(const CardT c0, con
 
 
 // Slow hand eval...
-Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_holdem(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
-  return eval_hand_7_card(hole.first, hole.second, std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
+Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_holdem_slow(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river) {
+  return eval_hand_7_card_slow(hole.first, hole.second, std::get<0>(flop), std::get<1>(flop), std::get<2>(flop), turn, river);
 }
 
 // Find straights by bit-wise and (&) of rank bits at 5 adjacent shifts
