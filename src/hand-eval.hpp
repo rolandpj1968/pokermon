@@ -33,13 +33,18 @@ namespace Poker {
 
       return std::make_pair(ranking, ranks);
     }
-    
+
     // Slow hand eval.
     extern HandEvalT eval_hand_7_card_slow(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6);
     extern HandEvalT eval_hand_holdem_slow(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
 
     // Faster hand eval using ranks bit fiddling.
-    extern HandEvalT eval_hand_5_to_9_card_fast1(HandT hand);
+    extern HandEvalCompactT eval_hand_5_to_9_card_compact_fast1(HandT hand);
+    inline HandEvalT eval_hand_5_to_9_card_fast1(HandT hand) {
+      HandEvalCompactT hand_eval_compact = eval_hand_5_to_9_card_compact_fast1(hand);
+
+      return to_hand_eval(hand_eval_compact);
+    }
     extern HandEvalT eval_hand_7_card_fast1(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6);
     extern HandEvalT eval_hand_holdem_fast1(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
 
@@ -53,7 +58,7 @@ namespace Poker {
     inline HandEvalT eval_hand_holdem(const std::pair<CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river){
       return eval_hand_holdem(hole, flop, turn, river);
     }
-    
+
     // Slow hand eval for Omaha...
     extern HandEvalT eval_hand_omaha(const std::tuple<CardT, CardT, CardT, CardT> hole, const std::tuple<CardT, CardT, CardT> flop, const CardT turn, const CardT river);
   }
