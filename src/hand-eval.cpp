@@ -657,24 +657,9 @@ Poker::HandEval::HandEvalCompactT Poker::HandEval::eval_hand_5_to_9_card_compact
 // Faster hand eval... 7 hand card like Holdem
 // @return pair(ranking, 5-characteristic-ranks)
 Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_7_card_fast1(const CardT c0, const CardT c1, const CardT c2, const CardT c3, const CardT c4, const CardT c5, const CardT c6) {
-  HandT h0 = HandT(c0); // TODO - use add...
-  HandT h1 = HandT(c1);
-  HandT h2 = HandT(c2);
-  HandT h3 = HandT(c3);
-  HandT h4 = HandT(c4);
-  HandT h5 = HandT(c5);
-  HandT h6 = HandT(c6);
+  HandT hand = HandT(c0).add(c1).add(c2).add(c3).add(c4).add(c5).add(c6);
 
-  HandT h01 = HandT(h0, h1);
-  HandT h23 = HandT(h2, h3);
-  HandT h45 = HandT(h4, h5);
-
-  HandT h0123 = HandT(h01, h23);
-  HandT h456 = HandT(h45, h6);
-
-  HandT h0123456 = HandT(h0123, h456);
-
-  return eval_hand_5_to_9_card_fast1(h0123456);
+  return eval_hand_5_to_9_card_fast1(hand);
 }
 
 // Faster hand eval...
