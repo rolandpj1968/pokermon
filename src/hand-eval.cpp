@@ -505,6 +505,19 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT ha
     }
   }
 
+  u64 ranks14_no_ace_lo = ranks14 & no_ace_lo_mask;
+  int ranks_count = Util::bitcount(ranks14_no_ace_lo);
+
+  bool no_flush_or_straight = !(is_flush || is_straight);
+
+  // Fast path for hi card only.
+  // Unlikely - ~17.4% in Holdem, but faster path for hi card even with branch misprediction
+  if (no_flush_or_straight && card_count == ranks_count) {
+    auto hand_ranks = get_five_high_ranks(ranks14);
+  
+    return std::make_pair(HighCard, hand_ranks);
+  }
+
   // TODO - could fast-track relatively common hi-card only and/or one-pair by all-ranks count == 7/6 here,
   //   now that flush and straight have been eliminated.
 
@@ -639,7 +652,8 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT ha
     }
   }
 
-  // High card(s) only
+  // High card(s) only - TODO remove - handled above
+  assert(0);
   auto hand_ranks = get_five_high_ranks(ranks14);
   
   return std::make_pair(HighCard, hand_ranks);

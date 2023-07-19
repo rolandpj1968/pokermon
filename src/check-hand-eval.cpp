@@ -26,9 +26,13 @@ int main() {
   std::seed_seq seed{2, 3, 5, 7, 13};
   Dealer::DealerT dealer(seed);
 
-  const int N_DEALS = 10000000;
+  const int N_DEALS = 1000000000;
 
   for(int deal_no = 0; deal_no < N_DEALS; deal_no++) {
+    if (deal_no % 1000000 == 0) {
+      printf("Deal number %d...\n", deal_no);
+    }
+    
     auto cards = dealer.deal(2+2+3+1+1);
 
     auto p0_hole = std::make_pair(CardT(cards[0+0]), CardT(cards[0+1]));
