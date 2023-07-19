@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     n_deals = std::atoi(argv[1]);
   }
   
-  eval_algo_t algo = fast_eval_algo_t;
+  eval_algo_t algo = fastest_eval_algo_t;
   if (argc > 2) {
     std::string algo_string = std::string(argv[2]);
     bool algo_found = false;
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     U8CardT cards[n_cards];
     dealer.deal(cards, n_cards);
 
-    HandEval::HandEvalT player_hand_evals[n_players] = {};
+    HandRankingT player_hand_rankings[n_players] = {};
 
     if (algo == none_eval_algo_t) {
       
@@ -70,7 +70,8 @@ int main(int argc, char* argv[]) {
 	player_hands[i] = non_hole_cards_hand;
 	player_hands[i].add(cards[2*i+0]).add(cards[2*i+1]);
 	
-	player_hand_evals[i] = HandEval::eval_hand_5_to_9_card_fast1(player_hands[i]);
+	HandEval::HandEvalCompactT player_hand_eval = HandEval::eval_hand_5_to_9_card_compact_fast1(player_hands[i]);
+	player_hand_rankings[i] = HandEval::get_hand_ranking_from_hand_eval_compact(player_hand_eval);
       }
       
     } else {
@@ -85,12 +86,13 @@ int main(int argc, char* argv[]) {
       auto river = CardT(cards[2*n_players + 4]);
 
       for (int i = 0; i < n_players; i++) {
-	player_hand_evals[i] = (algo == slow_eval_algo_t) ? HandEval::eval_hand_holdem_slow(player_holes[i], flop, turn, river) : HandEval::eval_hand_holdem_fast1(player_holes[i], flop, turn, river);
+	auto player_hand_eval = (algo == slow_eval_algo_t) ? HandEval::eval_hand_holdem_slow(player_holes[i], flop, turn, river) : HandEval::eval_hand_holdem_fast1(player_holes[i], flop, turn, river);
+	player_hand_rankings[i] = player_hand_eval.first;
       }
     }
 
     for (int i = 0; i < n_players; i++) {
-      player_hand_counts[i][player_hand_evals[i].first]++;
+      player_hand_counts[i][player_hand_rankings[i]]++;
     }
   }
 

@@ -19,6 +19,10 @@ namespace Poker {
       return ((u32)ranking << 20) | ((u32)r0 << 16) | ((u32)r1 << 12) | ((u32)r2 << 8) | ((u32)r3 << 4) | (u32)r4;
     }
 
+    inline HandRankingT get_hand_ranking_from_hand_eval_compact(HandEvalCompactT hand_eval_compact) {
+      return (HandRankingT)(hand_eval_compact >> 20);
+    }
+
     typedef std::pair<HandRankingT, std::tuple<RankT, RankT, RankT, RankT, RankT>> HandEvalT;
 
     inline HandEvalT to_hand_eval(const HandEvalCompactT hand_eval_compact) {
