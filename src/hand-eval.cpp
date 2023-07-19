@@ -518,8 +518,62 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT ha
     return std::make_pair(HighCard, hand_ranks);
   }
 
-  // TODO - could fast-track relatively common hi-card only and/or one-pair by all-ranks count == 7/6 here,
-  //   now that flush and straight have been eliminated.
+  // Ranks with an even card count (0, 2, 4) can be identified as 0 bits in xor (^) of rank bits of all suits.
+  // After eliminating quads, even card counts can only be pairs or 0-count, and we can eliminate 0-count ranks
+  //   using the combined bit-set of ranks of all suits.
+  u64 odd_ranks14_01 = ranks14_0 ^ ranks14_1;
+  u64 odd_ranks14_23 = ranks14_2 ^ ranks14_3;
+  u64 odd_ranks14 = odd_ranks14_01 ^ odd_ranks14_23;
+
+  u64 even_ranks14 = ~odd_ranks14;
+
+  u64 zero_count_ranks14 = ~ranks14;
+
+  u64 non_zero_even_ranks14 = even_ranks14 & ~zero_count_ranks14;
+  
+  u64 non_zero_even_ranks14_no_ace_lo = non_zero_even_ranks14 & no_ace_lo_mask;
+  int non_zero_evens_count = Util::bitcount(non_zero_even_ranks14_no_ace_lo);
+
+  // Fast path for pairs only (there may be more than two pairs in fact)
+  // Likely: ~44% pair and ~23.5% two-pairs for Holdem
+  if (no_flush_or_straight && card_count == ranks_count + non_zero_evens_count) {
+    // Pair or Two-Pair hand
+    u64 pair_ranks14 = non_zero_even_ranks14;
+
+    RankT pair_rank = (RankT) Util::hibit(pair_ranks14);
+    u64 ranks14_left = Util::removebit(ranks14, (int)pair_rank);
+
+    // ~2/3 likely in Holdem
+    if (non_zero_evens_count == 1) {
+      // Pair
+      // Three kickers - remaining three highest ranks
+      RankT kicker_rank = (RankT) Util::hibit(ranks14_left);
+      ranks14_left = Util::removebit(ranks14_left, (int)kicker_rank);
+      RankT kicker2_rank = (RankT) Util::hibit(ranks14_left);
+      ranks14_left = Util::removebit(ranks14_left, (int)kicker2_rank);
+      RankT kicker3_rank = (RankT) Util::hibit(ranks14_left);
+      
+      auto hand_ranks = std::make_tuple(pair_rank, pair_rank, kicker_rank, kicker2_rank, kicker3_rank);
+
+      return std::make_pair(Pair, hand_ranks);
+      
+    } else {
+      // Two Pair
+      u64 pair_ranks14_left = Util::removebit(pair_ranks14, (int)pair_rank);
+      RankT second_pair_rank = (RankT) Util::hibit(pair_ranks14_left);
+      ranks14_left = Util::removebit(ranks14_left, (int)second_pair_rank);
+
+      // One kicker - remaining high card
+      RankT kicker_rank = (RankT) Util::hibit(ranks14_left);
+
+      auto hand_ranks = std::make_tuple(pair_rank, pair_rank, second_pair_rank, second_pair_rank, kicker_rank);
+
+      return std::make_pair(TwoPair, hand_ranks);
+    }
+  }
+  
+  // Remaining hands are less common
+  // Quads - ~0.2% quads, ~2.6% full-house, ~4.8% trips
 
   // Identify quads by bitwise and (&) of ranks of all suits
   u64 quad_ranks14_01 = ranks14_0 & ranks14_1;
@@ -540,18 +594,19 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT ha
     return std::make_pair(FourOfAKind, hand_ranks);
   }
 
-  // Ranks with an even card count (0, 2, 4) can be identified as 0 bits in xor (^) of rank bits of all suits.
-  // After eliminating quads, even card counts can only be pairs or 0-count, and we can eliminate 0-count ranks
-  //   using the combined bit-set of ranks of all suits.
-  u64 odd_ranks14_01 = ranks14_0 ^ ranks14_1;
-  u64 odd_ranks14_23 = ranks14_2 ^ ranks14_3;
-  u64 odd_ranks14 = odd_ranks14_01 ^ odd_ranks14_23;
+  // // Ranks with an even card count (0, 2, 4) can be identified as 0 bits in xor (^) of rank bits of all suits.
+  // // After eliminating quads, even card counts can only be pairs or 0-count, and we can eliminate 0-count ranks
+  // //   using the combined bit-set of ranks of all suits.
+  // u64 odd_ranks14_01 = ranks14_0 ^ ranks14_1;
+  // u64 odd_ranks14_23 = ranks14_2 ^ ranks14_3;
+  // u64 odd_ranks14 = odd_ranks14_01 ^ odd_ranks14_23;
 
-  u64 even_ranks14 = ~odd_ranks14;
+  // u64 even_ranks14 = ~odd_ranks14;
 
-  u64 zero_count_ranks14 = ~ranks14;
+  // u64 zero_count_ranks14 = ~ranks14;
 
-  u64 pair_ranks14 = even_ranks14 & ~zero_count_ranks14;
+  // After eliminating quads, non-zero even card counts can only be pairs
+  u64 pair_ranks14 = non_zero_even_ranks14;
 
   // Trips are identified by a brute force evaluation - would be nice if there were a better way.
   u64 trips_ranks14_012 = ranks14_0 & ranks14_1 & ranks14_2 & ~ranks14_3;
@@ -616,6 +671,8 @@ Poker::HandEval::HandEvalT Poker::HandEval::eval_hand_5_to_9_card_fast1(HandT ha
 
     return std::make_pair(Set, hand_ranks);
   }
+
+  assert(0); // Handled above
 
   if (has_pair) {
     RankT pair_rank = (RankT) Util::hibit(pair_ranks14);
