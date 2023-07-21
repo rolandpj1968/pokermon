@@ -110,6 +110,7 @@ static void dump_p1_strategy(LimitRootTwoHandHoleHandStrategies& player_strategi
   }
 }
 
+[[maybe_unused]]
 static void dump_player_strategy(bool is_p0, const LimitRootTwoHandHoleHandStrategies& strategies) {
 
   printf("Player %c - Small Blind - Strategy:\n\n", (is_p0 ? '0' : '1'));
